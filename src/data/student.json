@@ -1,0 +1,10 @@
+{
+  "id": "student-1",
+  "name": "Aarav Sharma",
+  "rollNumber": "CSE2027-042",
+  "branch": "CSE",
+  "cgpa": 7.8,
+  "backlogs": 0,
+  "graduationYear": 2027,
+  "email": "aarav.sharma@college.edu"
+}

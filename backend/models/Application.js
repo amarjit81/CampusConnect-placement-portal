@@ -31,10 +31,12 @@ const applicationSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "Application Submitted",
+      maxlength: 160,
     },
     nextStep: {
       type: String,
       trim: true,
+      maxlength: 500,
     },
     notes: {
       type: String,
@@ -44,6 +46,7 @@ const applicationSchema = new mongoose.Schema(
     appliedAt: {
       type: Date,
       default: Date.now,
+      required: true,
     },
   },
   { timestamps: true },

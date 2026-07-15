@@ -32,6 +32,10 @@ const studentProfileSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Active backlogs must be a whole number",
+      },
     },
     graduationYear: {
       type: Number,
@@ -39,6 +43,10 @@ const studentProfileSchema = new mongoose.Schema(
       min: 2000,
       max: 2100,
       index: true,
+      validate: {
+        validator: Number.isInteger,
+        message: "Graduation year must be a whole number",
+      },
     },
     phone: {
       type: String,
@@ -47,10 +55,14 @@ const studentProfileSchema = new mongoose.Schema(
     skills: {
       type: [String],
       default: [],
+      set: (skills) => [
+        ...new Set(skills.map((skill) => skill.trim()).filter(Boolean)),
+      ],
     },
     resumeUrl: {
       type: String,
       trim: true,
+      match: [/^https?:\/\//i, "Resume URL must start with http:// or https://"],
     },
   },
   { timestamps: true },

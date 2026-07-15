@@ -4,7 +4,11 @@ const attachmentSchema = new mongoose.Schema(
   {
     name: { type: String, trim: true },
     type: { type: String, trim: true },
-    url: { type: String, trim: true },
+    url: {
+      type: String,
+      trim: true,
+      match: [/^https?:\/\//i, "Attachment URL must start with http:// or https://"],
+    },
   },
   { _id: false },
 );
@@ -50,6 +54,7 @@ const announcementSchema = new mongoose.Schema(
     publishedAt: {
       type: Date,
       default: Date.now,
+      required: true,
       index: true,
     },
   },

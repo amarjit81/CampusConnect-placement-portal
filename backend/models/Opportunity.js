@@ -49,7 +49,13 @@ const opportunitySchema = new mongoose.Schema(
         validator: (branches) => branches.length > 0,
         message: "At least one eligible branch is required",
       },
-      set: (branches) => branches.map((branch) => branch.toUpperCase()),
+      set: (branches) => [
+        ...new Set(
+          branches
+            .map((branch) => branch.trim().toUpperCase())
+            .filter(Boolean),
+        ),
+      ],
     },
     minimumCgpa: {
       type: Number,
@@ -61,12 +67,20 @@ const opportunitySchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Maximum backlogs must be a whole number",
+      },
     },
     graduationYear: {
       type: Number,
       required: true,
       min: 2000,
       max: 2100,
+      validate: {
+        validator: Number.isInteger,
+        message: "Graduation year must be a whole number",
+      },
     },
     deadline: {
       type: Date,
@@ -77,6 +91,10 @@ const opportunitySchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      match: [
+        /^https?:\/\//i,
+        "Application link must start with http:// or https://",
+      ],
     },
     status: {
       type: String,

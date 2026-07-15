@@ -22,8 +22,38 @@ const eventSchema = new mongoose.Schema(
     },
     eventType: {
       type: String,
-      enum: ["placement-drive", "interview", "workshop", "deadline", "other"],
+      enum: [
+        "placement-drive",
+        "pre-placement-talk",
+        "online-assessment",
+        "interview",
+        "workshop",
+        "deadline",
+        "company-activity",
+        "other",
+      ],
       default: "other",
+      index: true,
+    },
+    opportunity: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Opportunity",
+      index: true,
+    },
+    company: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+    },
+    role: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+    },
+    status: {
+      type: String,
+      enum: ["scheduled", "confirmed", "open", "expected", "completed", "cancelled"],
+      default: "scheduled",
       index: true,
     },
     startsAt: {
@@ -54,6 +84,10 @@ const eventSchema = new mongoose.Schema(
     registrationLink: {
       type: String,
       trim: true,
+      match: [
+        /^https?:\/\//i,
+        "Registration link must start with http:// or https://",
+      ],
     },
   },
   { timestamps: true },

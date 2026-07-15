@@ -9,6 +9,7 @@ const minimumCounts = {
   Application: 3,
   Bookmark: 3,
   Announcement: 5,
+  AnnouncementRead: 1,
   Event: 7,
 };
 
@@ -43,6 +44,10 @@ async function verifyRelationships() {
     .populate("opportunity")
     .lean();
   const announcements = await models.Announcement.find().populate("createdBy").lean();
+  const announcementReads = await models.AnnouncementRead.find()
+    .populate("student")
+    .populate("announcement")
+    .lean();
   const events = await models.Event.find()
     .populate("createdBy")
     .populate("opportunity")
@@ -66,6 +71,10 @@ async function verifyRelationships() {
   announcements.forEach((record) => {
     assert(record.createdBy?.role === "admin", `Announcement ${record._id} has no Admin creator`);
   });
+  announcementReads.forEach((record) => {
+    assert(record.student?.role === "student", `AnnouncementRead ${record._id} has no student`);
+    assert(record.announcement, `AnnouncementRead ${record._id} has no announcement`);
+  });
   events.forEach((record) => {
     assert(record.createdBy?.role === "admin", `Event ${record._id} has no Admin creator`);
     if (record.opportunity) {
@@ -79,6 +88,7 @@ async function verifyRelationships() {
     applications: applications.length,
     bookmarks: bookmarks.length,
     announcements: announcements.length,
+    announcementReads: announcementReads.length,
     events: events.length,
   };
 }

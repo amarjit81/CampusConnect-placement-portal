@@ -1,9 +1,8 @@
 # CampusConnect database
 
-CampusConnect uses MongoDB and Mongoose. The database layer is defined for
-every feature. Opportunities and announcements already use it through the API;
-events, bookmarks, applications, profiles, and users are ready for their
-route/controller layer.
+CampusConnect uses MongoDB and Mongoose. The database and non-authenticated API
+layers are defined for every current feature. The frontend still needs to be
+connected to the newer APIs.
 
 ## Connection
 
@@ -23,6 +22,7 @@ Use `127.0.0.1` to avoid local IPv6 resolution differences.
 - `applications`: a student's application and selection progress.
 - `bookmarks`: opportunities saved by a student.
 - `announcements`: notices published by an Admin.
+- `announcementreads`: per-student announcement read state.
 - `events`: workshops, assessments, interviews, drives, and deadlines.
 
 ## Relationships
@@ -35,6 +35,7 @@ User (admin)   1 --- creates ---> * Event
 User (student) 1 --- has -------> 1 StudentProfile
 User (student) 1 --- applies ---> * Application ---> 1 Opportunity
 User (student) 1 --- saves -----> * Bookmark -----> 1 Opportunity
+User (student) 1 --- reads -----> * AnnouncementRead -> 1 Announcement
 Event          * --- may link --> 1 Opportunity
 ```
 
@@ -46,6 +47,7 @@ Small owned values, such as announcement attachment details, are embedded.
 - User email and student enrollment number are unique.
 - A user can have only one student profile.
 - A student can apply to or bookmark an opportunity only once.
+- A student has at most one read-state record per announcement.
 - CGPA must be between 0 and 10.
 - Backlog counts and graduation years must be whole numbers.
 - Event end time cannot be before its start time.
@@ -64,7 +66,7 @@ npm run db:verify
 npm test
 ```
 
-`db:seed` is idempotent and prepares records in all seven collections.
+`db:seed` is idempotent and prepares records in all eight collections.
 `db:verify` checks indexes, minimum counts, populated references, and related
 user roles without creating or deleting data.
 

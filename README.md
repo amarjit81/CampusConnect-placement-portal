@@ -21,10 +21,10 @@ Express/MongoDB backend.
 - Create and browse persistent opportunities.
 - Create and browse persistent announcements.
 
-Opportunities and announcements are stored in MongoDB. Authentication,
-bookmarks, applications, profiles, and events are the next backend-integration
-milestones. Until authentication is added, new API records are associated with
-the active seeded Admin account.
+The server and database APIs are implemented for opportunities, announcements,
+events, bookmarks, applications, profiles, and announcement read state. The
+frontend still needs to be switched from local data to the newer APIs. Until
+authentication is added, the APIs use the active seeded Admin or Student.
 
 ## Requirements
 
@@ -110,6 +110,39 @@ npm run db:verify
 - `POST /api/announcements`
 - `PUT /api/announcements/:id`
 - `DELETE /api/announcements/:id`
+
+### Events
+
+- `GET /api/events`
+- `GET /api/events/:id`
+- `POST /api/events`
+- `PUT /api/events/:id`
+- `DELETE /api/events/:id`
+
+### Bookmarks
+
+- `GET /api/bookmarks`
+- `POST /api/bookmarks/:opportunityId`
+- `DELETE /api/bookmarks/:opportunityId`
+
+### Applications
+
+- `GET /api/applications`
+- `GET /api/applications/:id`
+- `POST /api/applications`
+- `PUT /api/applications/:id`
+- `DELETE /api/applications/:id`
+
+### Student profile
+
+- `GET /api/profile`
+- `PUT /api/profile`
+
+### Announcement read state
+
+- `GET /api/announcement-reads`
+- `PUT /api/announcement-reads/:announcementId`
+- `DELETE /api/announcement-reads/:announcementId`
 
 ## Demo accounts
 

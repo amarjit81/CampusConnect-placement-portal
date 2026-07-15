@@ -11,8 +11,17 @@ const applicationSchema = new mongoose.Schema(
     opportunity: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Opportunity",
-      required: true,
       index: true,
+    },
+    company: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+    },
+    role: {
+      type: String,
+      trim: true,
+      maxlength: 120,
     },
     status: {
       type: String,
@@ -52,7 +61,22 @@ const applicationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-applicationSchema.index({ student: 1, opportunity: 1 }, { unique: true });
+applicationSchema.pre("validate", function requireOpportunityOrManualRole() {
+  if (!this.opportunity && (!this.company || !this.role)) {
+    this.invalidate(
+      "opportunity",
+      "Choose an opportunity or provide both company and role",
+    );
+  }
+});
+
+applicationSchema.index(
+  { student: 1, opportunity: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { opportunity: { $type: "objectId" } },
+  },
+);
 applicationSchema.index({ opportunity: 1, status: 1 });
 
 module.exports = mongoose.model("Application", applicationSchema);

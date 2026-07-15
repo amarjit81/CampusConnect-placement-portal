@@ -2,6 +2,11 @@ const express = require("express");
 const connectDatabase = require("./config/database");
 const opportunityRoutes = require("./routes/opportunityRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+const bookmarkRoutes = require("./routes/bookmarkRoutes");
+const applicationRoutes = require("./routes/applicationRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const announcementReadRoutes = require("./routes/announcementReadRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -28,9 +33,14 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "CampusConnect backend is running" });
 });
 
-// API routes for opportunities and announcements.
+// Feature route groups. Authentication middleware will be added later.
 app.use("/api/opportunities", opportunityRoutes);
 app.use("/api/announcements", announcementRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/announcement-reads", announcementReadRoutes);
 
 async function startServer() {
   try {

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const connectDatabase = require("../config/database");
+const models = require("../models");
 const {
   User,
   StudentProfile,
@@ -8,8 +9,9 @@ const {
   Application,
   Bookmark,
   Announcement,
+  AnnouncementRead,
   Event,
-} = require("../models");
+} = models;
 
 const updateOptions = {
   upsert: true,
@@ -267,7 +269,7 @@ async function seedAnnouncements(admin) {
     },
   ];
 
-  await Promise.all(
+  return Promise.all(
     records.map((record) =>
       Announcement.findOneAndUpdate(
         { title: record.title },
@@ -275,6 +277,19 @@ async function seedAnnouncements(admin) {
         updateOptions,
       ),
     ),
+  );
+}
+
+async function seedAnnouncementReads(student, announcements) {
+  const announcement = announcements[0];
+  await AnnouncementRead.findOneAndUpdate(
+    { student: student._id, announcement: announcement._id },
+    {
+      student: student._id,
+      announcement: announcement._id,
+      readAt: new Date("2026-07-15T07:00:00.000Z"),
+    },
+    updateOptions,
   );
 }
 
@@ -319,10 +334,12 @@ async function seedEvents(admin, opportunities) {
 
 async function seedDatabase() {
   await connectDatabase();
+  await Promise.all(Object.values(models).map((Model) => Model.syncIndexes()));
   const { admin, student } = await seedUsers();
   const opportunities = await seedOpportunities(admin);
   await seedApplicationsAndBookmarks(student, opportunities);
-  await seedAnnouncements(admin);
+  const announcements = await seedAnnouncements(admin);
+  await seedAnnouncementReads(student, announcements);
   await seedEvents(admin, opportunities);
 
   console.log("CampusConnect seed data is ready for every collection.");

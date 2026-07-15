@@ -5,5 +5,6 @@ module.exports = {
   Application: require("./Application"),
   Bookmark: require("./Bookmark"),
   Announcement: require("./Announcement"),
+  AnnouncementRead: require("./AnnouncementRead"),
   Event: require("./Event"),
 };

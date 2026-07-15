@@ -7,6 +7,7 @@ const {
   Application,
   Announcement,
   Event,
+  AnnouncementRead,
 } = require("../models");
 
 const userId = new mongoose.Types.ObjectId();
@@ -79,6 +80,23 @@ test("application limits tracker text lengths", async () => {
   assert.ok(error.errors.nextStep);
 });
 
+test("application accepts a manual tracker company and role", async () => {
+  const application = new Application({
+    student: userId,
+    company: "Independent Company",
+    role: "Developer",
+    status: "in-progress",
+  });
+  await application.validate();
+  assert.equal(application.opportunity, undefined);
+});
+
+test("application requires either an opportunity or manual company and role", async () => {
+  const application = new Application({ student: userId });
+  const error = await application.validate().catch((validationError) => validationError);
+  assert.ok(error.errors.opportunity);
+});
+
 test("announcement rejects non-HTTP attachment URLs", async () => {
   const announcement = new Announcement({
     createdBy: userId,
@@ -111,4 +129,10 @@ test("event supports placement workflow fields and validates its time range", as
   event.endsAt = new Date("2026-08-20T09:00:00.000Z");
   const error = await event.validate().catch((validationError) => validationError);
   assert.ok(error.errors.endsAt);
+});
+
+test("announcement read state requires both student and announcement", async () => {
+  const readState = new AnnouncementRead({ student: userId });
+  const error = await readState.validate().catch((validationError) => validationError);
+  assert.ok(error.errors.announcement);
 });

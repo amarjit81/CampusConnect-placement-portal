@@ -1,0 +1,72 @@
+[
+  {
+    "id": "event-1",
+    "dateTime": "2026-06-20T11:00:00+05:30",
+    "company": "TechNova",
+    "eventTitle": "TechNova pre-placement talk",
+    "eventType": "Company PPT",
+    "role": "Graduate Software Engineer",
+    "status": "Scheduled",
+    "notes": "Seminar Hall A. Attendance is recommended before the interview process."
+  },
+  {
+    "id": "event-2",
+    "dateTime": "2026-06-22T10:00:00+05:30",
+    "company": "TechNova",
+    "eventTitle": "Graduate engineer online assessment",
+    "eventType": "Online Assessment",
+    "role": "Graduate Software Engineer",
+    "status": "Confirmed",
+    "notes": "Bring your college ID and report to Lab 3 by 9:45 AM."
+  },
+  {
+    "id": "event-3",
+    "dateTime": "2026-06-24T10:00:00+05:30",
+    "company": "TechNova",
+    "eventTitle": "Technical interview schedule",
+    "eventType": "Technical Interview",
+    "role": "Graduate Software Engineer",
+    "status": "Confirmed",
+    "notes": "Revise DSA, DBMS and OOPs. Interview link will be shared by the T&P Cell."
+  },
+  {
+    "id": "event-4",
+    "dateTime": "2026-06-27T14:30:00+05:30",
+    "company": "DataNest",
+    "eventTitle": "DataNest HR interviews",
+    "eventType": "HR Interview",
+    "role": "Data Analyst Intern",
+    "status": "Scheduled",
+    "notes": "Prepare a short introduction and examples of teamwork from recent projects."
+  },
+  {
+    "id": "event-5",
+    "dateTime": "2026-06-30T17:00:00+05:30",
+    "company": "DataNest",
+    "eventTitle": "Data analyst application deadline",
+    "eventType": "Application Deadline",
+    "role": "Data Analyst Intern",
+    "status": "Open",
+    "notes": "Applications close at 5:00 PM. Verify that your resume is up to date."
+  },
+  {
+    "id": "event-6",
+    "dateTime": "2026-07-02T16:00:00+05:30",
+    "company": "PixelCraft",
+    "eventTitle": "UI developer result announcement",
+    "eventType": "Company Activity",
+    "role": "UI Developer",
+    "status": "Expected",
+    "notes": "Final results will be published through the T&P Cell announcement board."
+  },
+  {
+    "id": "event-7",
+    "dateTime": "2026-07-18T17:00:00+05:30",
+    "company": "CoreBuild Industries",
+    "eventTitle": "Graduate engineer application deadline",
+    "eventType": "Application Deadline",
+    "role": "Graduate Engineer Trainee",
+    "status": "Open",
+    "notes": "Eligible students should complete the company form before the deadline."
+  }
+]

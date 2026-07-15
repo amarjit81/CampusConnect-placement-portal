@@ -1,0 +1,51 @@
+[
+  {
+    "id": "ann-1",
+    "title": "TechNova interview schedule released",
+    "message": "The technical interview schedule for shortlisted TechNova candidates has been published.",
+    "body": "The technical interview schedule for shortlisted TechNova candidates has been published. Students listed in the attached schedule should report to the T&P Cell 20 minutes before their assigned slot with a printed resume and college ID. After checking the schedule, update your personal Application Tracker with your interview time and preparation notes.",
+    "date": "2026-06-19T22:45:00+05:30",
+    "important": true,
+    "attachmentName": "Interview_Schedule.pdf",
+    "attachmentType": "PDF",
+    "attachmentUrl": "https://example.com/files/Interview_Schedule.pdf"
+  },
+  {
+    "id": "ann-2",
+    "title": "Resume review desk",
+    "message": "Students can visit the T&P office between 2:00 PM and 4:00 PM for resume feedback.",
+    "body": "The resume review desk will be open in the T&P office between 2:00 PM and 4:00 PM. Bring a digital or printed copy of your latest resume. Reviews will be handled on a first-come, first-served basis.",
+    "date": "2026-06-19T18:00:00+05:30",
+    "important": false
+  },
+  {
+    "id": "ann-3",
+    "title": "Aptitude practice resources",
+    "message": "A new set of aptitude practice questions has been shared with all final-year students.",
+    "body": "A curated aptitude practice pack covering quantitative ability, logical reasoning, and verbal ability is now available. Students preparing for upcoming online assessments should complete the timed sections before the weekend.",
+    "date": "2026-06-18T16:30:00+05:30",
+    "important": false,
+    "attachmentName": "Aptitude_Practice_Resources.pdf",
+    "attachmentType": "PDF",
+    "attachmentUrl": "https://example.com/files/Aptitude_Practice_Resources.pdf"
+  },
+  {
+    "id": "ann-4",
+    "title": "DataNest pre-placement briefing",
+    "message": "The briefing recording and role overview are available for students who could not attend.",
+    "body": "Students who missed the DataNest pre-placement briefing can review the role overview and key eligibility notes. Please read the material before the application deadline and use the Opportunities page to confirm your eligibility.",
+    "date": "2026-06-17T11:00:00+05:30",
+    "important": false
+  },
+  {
+    "id": "ann-5",
+    "title": "Placement policy reminder",
+    "message": "Review the updated placement participation guidelines before applying to upcoming drives.",
+    "body": "The placement participation guidelines have been updated. Students should review attendance expectations, offer acceptance rules, and document requirements before applying to upcoming drives.",
+    "date": "2026-06-10T09:30:00+05:30",
+    "important": true,
+    "attachmentName": "Placement_Policy_2026.pdf",
+    "attachmentType": "PDF",
+    "attachmentUrl": "https://example.com/files/Placement_Policy_2026.pdf"
+  }
+]

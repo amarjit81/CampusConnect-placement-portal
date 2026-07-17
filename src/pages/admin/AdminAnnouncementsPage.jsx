@@ -3,7 +3,7 @@ import { useCampus } from "../../context/CampusContext";
 import AnnouncementList from "../../components/announcements/AnnouncementList";
 
 function AdminAnnouncementsPage() {
-  const { announcements, addAnnouncement, apiNotice } = useCampus();
+  const { announcements, addAnnouncement } = useCampus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -29,8 +29,6 @@ function AdminAnnouncementsPage() {
           <p>Publish clear updates for students through the CampusConnect API.</p>
         </div>
       </div>
-
-      {apiNotice && <p className="api-notice">{apiNotice}</p>}
 
       <div className="two-column-layout">
         <form className="form-card form-card--compact" onSubmit={handleSubmit}>

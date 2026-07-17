@@ -2790,11 +2790,28 @@ h3,
   }
 }
 .api-notice {
-  margin: 0;
+  margin: 0 0 1rem;
   padding: 0.85rem 1rem;
   border: 1px solid #f2c66d;
   border-radius: 0.75rem;
   background: #fff8e7;
   color: #714c00;
   font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.api-notice button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }

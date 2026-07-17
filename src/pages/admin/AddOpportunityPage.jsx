@@ -4,7 +4,7 @@ import { useCampus } from "../../context/CampusContext";
 import OpportunityForm from "../../components/opportunities/OpportunityForm";
 
 function AddOpportunityPage() {
-  const { addOpportunity, apiNotice } = useCampus();
+  const { addOpportunity } = useCampus();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,7 +26,6 @@ function AddOpportunityPage() {
           </p>
         </div>
       </div>
-      {apiNotice && <p className="api-notice">{apiNotice}</p>}
       <OpportunityForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   );

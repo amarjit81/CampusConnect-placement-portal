@@ -7,10 +7,11 @@ import React, {
 } from "react";
 import opportunityData from "../data/opportunities.json";
 import announcementData from "../data/announcements.json";
+import eventData from "../data/events.json";
 import studentData from "../data/student.json";
+import { campusApi } from "../services/api";
 
 const CampusContext = createContext();
-const API_BASE_URL = "http://localhost:8080/api";
 
 function getStoredValue(key, fallback) {
   try {
@@ -103,6 +104,9 @@ export function CampusProvider({ children }) {
   );
   const [opportunities, setOpportunities] = useState(getStoredOpportunities);
   const [announcements, setAnnouncements] = useState(getStoredAnnouncements);
+  const [events, setEvents] = useState(() =>
+    getStoredValue("campus-events", eventData),
+  );
   const [bookmarks, setBookmarks] = useState(() =>
     getStoredValue("campus-bookmarks", []),
   );
@@ -110,47 +114,66 @@ export function CampusProvider({ children }) {
   const [readAnnouncementIds, setReadAnnouncementIds] = useState(() =>
     getStoredValue("campus-read-announcements", []),
   );
+  const [student, setStudent] = useState(() =>
+    getStoredValue("campus-student-profile", studentData),
+  );
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [apiNotice, setApiNotice] = useState("");
 
   useEffect(() => {
     let ignoreResponse = false;
 
     async function loadApiData() {
-      try {
-        const [opportunityResponse, announcementResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/opportunities`),
-          fetch(`${API_BASE_URL}/announcements`),
-        ]);
+      const resources = await Promise.allSettled([
+        campusApi.getOpportunities(),
+        campusApi.getAnnouncements(),
+        campusApi.getEvents(),
+        campusApi.getBookmarks(),
+        campusApi.getApplications(),
+        campusApi.getProfile(),
+        campusApi.getReadAnnouncements(),
+      ]);
 
-        if (!opportunityResponse.ok || !announcementResponse.ok) {
-          throw new Error("Could not load campus data");
-        }
+      if (ignoreResponse) return;
 
-        const [apiOpportunities, apiAnnouncements] = await Promise.all([
-          opportunityResponse.json(),
-          announcementResponse.json(),
-        ]);
+      const applyResource = (index, setter, storageKey, transform = (data) => data) => {
+        const result = resources[index];
+        if (result.status !== "fulfilled") return;
 
-        if (!ignoreResponse) {
-          setOpportunities(apiOpportunities);
-          setAnnouncements(apiAnnouncements);
-          localStorage.setItem(
-            "campus-opportunities",
-            JSON.stringify(apiOpportunities),
-          );
-          localStorage.setItem(
-            "campus-announcements",
-            JSON.stringify(apiAnnouncements),
-          );
-          setApiNotice("");
-        }
-      } catch {
-        if (!ignoreResponse) {
-          setApiNotice(
-            "The API is unavailable. CampusConnect is using saved offline data.",
-          );
-        }
+        const value = transform(result.value);
+        setter(value);
+        localStorage.setItem(storageKey, JSON.stringify(value));
+      };
+
+      applyResource(0, setOpportunities, "campus-opportunities");
+      applyResource(1, setAnnouncements, "campus-announcements");
+      applyResource(2, setEvents, "campus-events");
+      applyResource(3, setBookmarks, "campus-bookmarks", (bookmarksData) =>
+        bookmarksData.map((bookmark) => bookmark.opportunityId),
+      );
+      applyResource(4, setTrackerEntries, "campus-tracker-entries");
+      applyResource(5, setStudent, "campus-student-profile");
+      applyResource(
+        6,
+        setReadAnnouncementIds,
+        "campus-read-announcements",
+      );
+
+      const failedCount = resources.filter(
+        (result) => result.status === "rejected",
+      ).length;
+      if (failedCount === resources.length) {
+        setApiNotice(
+          "The API is unavailable. CampusConnect is using saved offline data.",
+        );
+      } else if (failedCount > 0) {
+        setApiNotice(
+          "Some campus data could not be refreshed. Saved data is shown where needed.",
+        );
+      } else {
+        setApiNotice("");
       }
+      setIsInitialLoading(false);
     }
 
     loadApiData();
@@ -172,19 +195,7 @@ export function CampusProvider({ children }) {
 
   async function addOpportunity(opportunity) {
     try {
-      const response = await fetch(`${API_BASE_URL}/opportunities`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(opportunity),
-      });
-
-      if (!response.ok) {
-        throw new Error("Could not create opportunity");
-      }
-
-      const createdOpportunity = await response.json();
+      const createdOpportunity = await campusApi.createOpportunity(opportunity);
 
       setOpportunities((currentOpportunities) => {
         const updatedOpportunities = [
@@ -202,6 +213,7 @@ export function CampusProvider({ children }) {
         return updatedOpportunities;
       });
 
+      setApiNotice("");
       return createdOpportunity;
     } catch {
       const createdOpportunity = {
@@ -234,19 +246,7 @@ export function CampusProvider({ children }) {
     let createdAnnouncement;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/announcements`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(announcement),
-      });
-
-      if (!response.ok) {
-        throw new Error("Could not create announcement");
-      }
-
-      createdAnnouncement = await response.json();
+      createdAnnouncement = await campusApi.createAnnouncement(announcement);
       setApiNotice("");
     } catch {
       createdAnnouncement = {
@@ -276,7 +276,8 @@ export function CampusProvider({ children }) {
     return createdAnnouncement;
   }
 
-  function toggleBookmark(opportunityId) {
+  async function toggleBookmark(opportunityId) {
+    const isBookmarked = bookmarks.includes(opportunityId);
     const updatedBookmarks = bookmarks.includes(opportunityId)
       ? bookmarks.filter((id) => id !== opportunityId)
       : [...bookmarks, opportunityId];
@@ -286,6 +287,19 @@ export function CampusProvider({ children }) {
       "campus-bookmarks",
       JSON.stringify(updatedBookmarks),
     );
+
+    try {
+      if (isBookmarked) {
+        await campusApi.deleteBookmark(opportunityId);
+      } else {
+        await campusApi.createBookmark(opportunityId);
+      }
+      setApiNotice("");
+    } catch {
+      setApiNotice(
+        "The bookmark was saved only in this browser because the API is unavailable.",
+      );
+    }
   }
 
   function saveTrackerEntries(entries) {
@@ -293,29 +307,54 @@ export function CampusProvider({ children }) {
     localStorage.setItem("campus-tracker-entries", JSON.stringify(entries));
   }
 
-  function addTrackerEntry(entry) {
-    saveTrackerEntries([
-      {
-        ...entry,
-        id: `tracker-${Date.now()}`,
-      },
-      ...trackerEntries,
-    ]);
+  async function addTrackerEntry(entry) {
+    let createdEntry;
+    try {
+      createdEntry = await campusApi.createApplication(entry);
+      setApiNotice("");
+    } catch {
+      createdEntry = { ...entry, id: `tracker-${Date.now()}` };
+      setApiNotice(
+        "The tracker entry was saved only in this browser because the API is unavailable.",
+      );
+    }
+    saveTrackerEntries([createdEntry, ...trackerEntries]);
+    return createdEntry;
   }
 
-  function updateTrackerEntry(entryId, updates) {
+  async function updateTrackerEntry(entryId, updates) {
+    let updatedEntry;
+    try {
+      updatedEntry = await campusApi.updateApplication(entryId, updates);
+      setApiNotice("");
+    } catch {
+      updatedEntry = { ...updates, id: entryId };
+      setApiNotice(
+        "The tracker update was saved only in this browser because the API is unavailable.",
+      );
+    }
     saveTrackerEntries(
       trackerEntries.map((entry) =>
-        entry.id === entryId ? { ...entry, ...updates } : entry,
+        entry.id === entryId ? { ...entry, ...updatedEntry } : entry,
       ),
     );
+    return updatedEntry;
   }
 
-  function deleteTrackerEntry(entryId) {
+  async function deleteTrackerEntry(entryId) {
+    try {
+      await campusApi.deleteApplication(entryId);
+      setApiNotice("");
+    } catch {
+      setApiNotice(
+        "The tracker entry was removed only in this browser because the API is unavailable.",
+      );
+    }
     saveTrackerEntries(trackerEntries.filter((entry) => entry.id !== entryId));
   }
 
-  function toggleAnnouncementRead(announcementId) {
+  async function toggleAnnouncementRead(announcementId) {
+    const isRead = readAnnouncementIds.includes(announcementId);
     const updatedIds = readAnnouncementIds.includes(announcementId)
       ? readAnnouncementIds.filter((id) => id !== announcementId)
       : [...readAnnouncementIds, announcementId];
@@ -325,6 +364,43 @@ export function CampusProvider({ children }) {
       "campus-read-announcements",
       JSON.stringify(updatedIds),
     );
+
+    try {
+      if (isRead) {
+        await campusApi.markAnnouncementUnread(announcementId);
+      } else {
+        await campusApi.markAnnouncementRead(announcementId);
+      }
+      setApiNotice("");
+    } catch {
+      setApiNotice(
+        "The read status was saved only in this browser because the API is unavailable.",
+      );
+    }
+  }
+
+  async function updateStudentProfile(updates) {
+    try {
+      const updatedStudent = await campusApi.updateProfile(updates);
+      setStudent(updatedStudent);
+      localStorage.setItem(
+        "campus-student-profile",
+        JSON.stringify(updatedStudent),
+      );
+      setApiNotice("");
+      return updatedStudent;
+    } catch {
+      const updatedStudent = { ...student, ...updates };
+      setStudent(updatedStudent);
+      localStorage.setItem(
+        "campus-student-profile",
+        JSON.stringify(updatedStudent),
+      );
+      setApiNotice(
+        "The profile update was saved only in this browser because the API is unavailable.",
+      );
+      return updatedStudent;
+    }
   }
 
   const unreadAnnouncementCount = announcements.filter(
@@ -336,12 +412,14 @@ export function CampusProvider({ children }) {
       currentRole,
       opportunities,
       announcements,
+      events,
       bookmarks,
       trackerEntries,
       readAnnouncementIds,
       unreadAnnouncementCount,
       apiNotice,
-      student: studentData,
+      isInitialLoading,
+      student,
       login,
       logout,
       addOpportunity,
@@ -351,17 +429,21 @@ export function CampusProvider({ children }) {
       updateTrackerEntry,
       deleteTrackerEntry,
       toggleAnnouncementRead,
+      updateStudentProfile,
       clearApiNotice: () => setApiNotice(""),
     }),
     [
       currentRole,
       opportunities,
       announcements,
+      events,
       bookmarks,
       trackerEntries,
       readAnnouncementIds,
       unreadAnnouncementCount,
       apiNotice,
+      isInitialLoading,
+      student,
     ],
   );
 

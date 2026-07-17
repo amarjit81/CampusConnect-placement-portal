@@ -10,8 +10,8 @@ Express/MongoDB backend.
 
 - Browse, search, and filter placement opportunities.
 - Check eligibility against the demo student profile.
-- Bookmark opportunities in browser storage.
-- Maintain a personal application tracker in browser storage.
+- Bookmark opportunities with persistent database-backed state.
+- Maintain a persistent personal application tracker.
 - Review upcoming events and announcements.
 - Mark announcements as read or unread.
 
@@ -21,9 +21,9 @@ Express/MongoDB backend.
 - Create and browse persistent opportunities.
 - Create and browse persistent announcements.
 
-The server and database APIs are implemented for opportunities, announcements,
-events, bookmarks, applications, profiles, and announcement read state. The
-frontend still needs to be switched from local data to the newer APIs. Until
+The frontend is integrated with the server APIs for opportunities,
+announcements, events, bookmarks, applications, profiles, and announcement
+read state. Saved browser data remains available as an offline fallback. Until
 authentication is added, the APIs use the active seeded Admin or Student.
 
 ## Requirements
@@ -53,6 +53,9 @@ The default connection is:
 ```env
 MONGODB_URI=mongodb://127.0.0.1:27017/campusconnect
 ```
+
+The frontend defaults to `http://localhost:8080/api`. To use another API host,
+set `VITE_API_URL` in a root `.env` file.
 
 ## Run locally
 

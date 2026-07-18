@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCampus } from "../../context/CampusContext";
 import OpportunityForm from "../../components/opportunities/OpportunityForm";
@@ -5,9 +6,12 @@ import OpportunityForm from "../../components/opportunities/OpportunityForm";
 function AddOpportunityPage() {
   const { addOpportunity } = useCampus();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(opportunity) {
-    addOpportunity(opportunity);
+  async function handleSubmit(opportunity) {
+    setIsSubmitting(true);
+    await addOpportunity(opportunity);
+    setIsSubmitting(false);
     navigate("/admin/opportunities");
   }
 
@@ -22,7 +26,7 @@ function AddOpportunityPage() {
           </p>
         </div>
       </div>
-      <OpportunityForm onSubmit={handleSubmit} />
+      <OpportunityForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   );
 }

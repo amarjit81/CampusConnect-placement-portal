@@ -13,6 +13,7 @@ function AnnouncementCard({ announcement }) {
     toggleAnnouncementRead,
   } = useCampus();
   const [showFullAnnouncement, setShowFullAnnouncement] = useState(false);
+  const [isUpdatingReadState, setIsUpdatingReadState] = useState(false);
   const isStudent = currentRole === "student";
   const isRead = readAnnouncementIds.includes(announcement.id);
 
@@ -46,7 +47,12 @@ function AnnouncementCard({ announcement }) {
                 className="announcement-read-toggle"
                 type="button"
                 aria-pressed={isRead}
-                onClick={() => toggleAnnouncementRead(announcement.id)}
+                disabled={isUpdatingReadState}
+                onClick={async () => {
+                  setIsUpdatingReadState(true);
+                  await toggleAnnouncementRead(announcement.id);
+                  setIsUpdatingReadState(false);
+                }}
               >
                 <span className="announcement-read-toggle__control">
                   {isRead ? "✓" : ""}
@@ -133,7 +139,12 @@ function AnnouncementCard({ announcement }) {
                   isRead ? "button--ghost" : "button--primary"
                 }`}
                 type="button"
-                onClick={() => toggleAnnouncementRead(announcement.id)}
+                disabled={isUpdatingReadState}
+                onClick={async () => {
+                  setIsUpdatingReadState(true);
+                  await toggleAnnouncementRead(announcement.id);
+                  setIsUpdatingReadState(false);
+                }}
               >
                 {isRead ? "Mark as unread" : "✓ Mark as read"}
               </button>

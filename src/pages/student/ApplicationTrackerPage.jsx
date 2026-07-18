@@ -24,6 +24,8 @@ function ApplicationTrackerPage() {
   } = useCampus();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState(null);
 
   function openAddModal() {
     setEditingEntry(null);
@@ -40,22 +42,26 @@ function ApplicationTrackerPage() {
     setEditingEntry(null);
   }
 
-  function saveEntry(entry) {
+  async function saveEntry(entry) {
+    setIsSaving(true);
     if (editingEntry) {
-      updateTrackerEntry(editingEntry.id, entry);
+      await updateTrackerEntry(editingEntry.id, entry);
     } else {
-      addTrackerEntry(entry);
+      await addTrackerEntry(entry);
     }
+    setIsSaving(false);
     closeModal();
   }
 
-  function removeEntry(entry) {
+  async function removeEntry(entry) {
     if (
       window.confirm(
         `Remove ${entry.company} from your personal application tracker?`,
       )
     ) {
-      deleteTrackerEntry(entry.id);
+      setDeletingEntryId(entry.id);
+      await deleteTrackerEntry(entry.id);
+      setDeletingEntryId(null);
     }
   }
 
@@ -118,9 +124,10 @@ function ApplicationTrackerPage() {
                       <button
                         className="button button--danger button--small"
                         type="button"
+                        disabled={deletingEntryId === application.id}
                         onClick={() => removeEntry(application)}
                       >
-                        Delete
+                        {deletingEntryId === application.id ? "Deleting..." : "Delete"}
                       </button>
                     )}
                   </div>
@@ -151,6 +158,7 @@ function ApplicationTrackerPage() {
           entry={editingEntry}
           onClose={closeModal}
           onSave={saveEntry}
+          isSubmitting={isSaving}
         />
       )}
     </div>

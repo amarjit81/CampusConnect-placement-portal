@@ -15,7 +15,7 @@ const initialForm = {
   status: "active",
 };
 
-function OpportunityForm({ onSubmit }) {
+function OpportunityForm({ onSubmit, isSubmitting = false }) {
   const [form, setForm] = useState(initialForm);
 
   function handleChange(event) {
@@ -183,8 +183,12 @@ function OpportunityForm({ onSubmit }) {
       </div>
 
       <div className="form-actions">
-        <button className="button button--primary" type="submit">
-          Publish opportunity
+        <button
+          className="button button--primary"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Publishing..." : "Publish opportunity"}
         </button>
       </div>
     </form>

@@ -4,6 +4,7 @@ import AnnouncementList from "../../components/announcements/AnnouncementList";
 
 function AdminAnnouncementsPage() {
   const { announcements, addAnnouncement } = useCampus();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: "",
     message: "",
@@ -11,9 +12,11 @@ function AdminAnnouncementsPage() {
     important: false,
   });
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    addAnnouncement(form);
+    setIsSubmitting(true);
+    await addAnnouncement(form);
+    setIsSubmitting(false);
     setForm({ title: "", message: "", date: "", important: false });
   }
 
@@ -23,7 +26,7 @@ function AdminAnnouncementsPage() {
         <div>
           <p className="eyebrow">Campus communication</p>
           <h2>Announcements</h2>
-          <p>Publish clear updates for students using local frontend state.</p>
+          <p>Publish clear updates for students through the CampusConnect API.</p>
         </div>
       </div>
 
@@ -74,8 +77,12 @@ function AdminAnnouncementsPage() {
             />
             Mark as important
           </label>
-          <button className="button button--primary" type="submit">
-            Publish announcement
+          <button
+            className="button button--primary"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Publishing..." : "Publish announcement"}
           </button>
         </form>
 

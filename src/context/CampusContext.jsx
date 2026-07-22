@@ -10,6 +10,7 @@ import announcementData from "../data/announcements.json";
 import eventData from "../data/events.json";
 import studentData from "../data/student.json";
 import { campusApi, getAuthToken, setAuthToken } from "../services/api";
+import { deriveStudentOpportunities } from "../utils/opportunityStatus";
 
 const CampusContext = createContext();
 
@@ -479,12 +480,17 @@ export function CampusProvider({ children }) {
   const unreadAnnouncementCount = announcements.filter(
     (announcement) => !readAnnouncementIds.includes(announcement.id),
   ).length;
+  const studentOpportunities = useMemo(
+    () => deriveStudentOpportunities(opportunities, student, trackerEntries),
+    [opportunities, student, trackerEntries],
+  );
 
   const value = useMemo(
     () => ({
       currentUser,
       currentRole,
-      opportunities,
+      opportunities:
+        currentRole === "student" ? studentOpportunities : opportunities,
       announcements,
       events,
       bookmarks,
@@ -511,6 +517,7 @@ export function CampusProvider({ children }) {
       currentUser,
       currentRole,
       opportunities,
+      studentOpportunities,
       announcements,
       events,
       bookmarks,

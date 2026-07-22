@@ -5,7 +5,7 @@ import OpportunityList from "../../components/opportunities/OpportunityList";
 import AnnouncementList from "../../components/announcements/AnnouncementList";
 
 function AdminDashboard() {
-  const { opportunities, announcements } = useCampus();
+  const { opportunities, announcements, adminApplications } = useCampus();
   const activeCount = opportunities.filter(
     (opportunity) => opportunity.status === "active",
   ).length;
@@ -41,6 +41,14 @@ function AdminDashboard() {
           value={announcements.length}
           helper="Published updates"
           tone="orange"
+        />
+        <StatCard
+          label="Applications"
+          value={adminApplications.length}
+          helper="Student pipeline records"
+          tone="blue"
+          actionLabel="View applications"
+          to="/admin/applications"
         />
       </section>
 

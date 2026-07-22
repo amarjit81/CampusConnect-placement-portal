@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const emptyEntry = {
   company: "",
@@ -20,11 +20,9 @@ const roundOptions = [
 ];
 
 function TrackerEntryModal({ entry, onClose, onSave, isSubmitting = false }) {
-  const [form, setForm] = useState(emptyEntry);
-
-  useEffect(() => {
-    setForm(entry ? { ...emptyEntry, ...entry } : emptyEntry);
-  }, [entry]);
+  const [form, setForm] = useState(() =>
+    entry ? { ...emptyEntry, ...entry } : emptyEntry,
+  );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));

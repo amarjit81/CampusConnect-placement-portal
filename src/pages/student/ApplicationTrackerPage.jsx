@@ -26,6 +26,7 @@ function ApplicationTrackerPage() {
   const [editingEntry, setEditingEntry] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState(null);
+  const [error, setError] = useState("");
 
   function openAddModal() {
     setEditingEntry(null);
@@ -44,13 +45,19 @@ function ApplicationTrackerPage() {
 
   async function saveEntry(entry) {
     setIsSaving(true);
-    if (editingEntry) {
-      await updateTrackerEntry(editingEntry.id, entry);
-    } else {
-      await addTrackerEntry(entry);
+    setError("");
+    try {
+      if (editingEntry) {
+        await updateTrackerEntry(editingEntry.id, entry);
+      } else {
+        await addTrackerEntry(entry);
+      }
+      closeModal();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
-    closeModal();
   }
 
   async function removeEntry(entry) {
@@ -60,8 +67,14 @@ function ApplicationTrackerPage() {
       )
     ) {
       setDeletingEntryId(entry.id);
-      await deleteTrackerEntry(entry.id);
-      setDeletingEntryId(null);
+      setError("");
+      try {
+        await deleteTrackerEntry(entry.id);
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        setDeletingEntryId(null);
+      }
     }
   }
 
@@ -86,6 +99,8 @@ function ApplicationTrackerPage() {
           </button>
         </div>
       </div>
+
+      {error && <p className="form-error" role="alert">{error}</p>}
 
       {trackerEntries.length === 0 ? (
         <EmptyState

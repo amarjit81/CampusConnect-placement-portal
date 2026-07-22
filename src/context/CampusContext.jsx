@@ -1,4 +1,5 @@
-import React, {
+/* eslint-disable react-refresh/only-export-components */
+import {
   createContext,
   useContext,
   useEffect,
@@ -115,6 +116,7 @@ export function CampusProvider({ children }) {
     getStoredValue("campus-bookmarks", []),
   );
   const [trackerEntries, setTrackerEntries] = useState(getInitialTrackerEntries);
+  const [adminApplications, setAdminApplications] = useState([]);
   const [readAnnouncementIds, setReadAnnouncementIds] = useState(() =>
     getStoredValue("campus-read-announcements", []),
   );
@@ -124,6 +126,19 @@ export function CampusProvider({ children }) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(() => Boolean(getAuthToken()));
   const [apiNotice, setApiNotice] = useState("");
+
+  function clearStudentSessionData() {
+    setBookmarks([]);
+    setTrackerEntries([]);
+    setReadAnnouncementIds([]);
+    setStudent(studentData);
+    [
+      "campus-bookmarks",
+      "campus-tracker-entries",
+      "campus-read-announcements",
+      "campus-student-profile",
+    ].forEach((key) => localStorage.removeItem(key));
+  }
 
   useEffect(() => {
     let ignoreResponse = false;
@@ -157,6 +172,7 @@ export function CampusProvider({ children }) {
       setCurrentUser(null);
       setCurrentRole(null);
       localStorage.removeItem("campus-auth-user");
+      clearStudentSessionData();
     };
     window.addEventListener("campus-auth-expired", handleExpiredSession);
 
@@ -180,6 +196,9 @@ export function CampusProvider({ children }) {
         opportunities: campusApi.getOpportunities,
         announcements: campusApi.getAnnouncements,
         events: campusApi.getEvents,
+        ...(currentRole === "admin"
+          ? { adminApplications: campusApi.getApplications }
+          : {}),
         ...(currentRole === "student"
           ? {
               bookmarks: campusApi.getBookmarks,
@@ -211,6 +230,10 @@ export function CampusProvider({ children }) {
       applyResource("opportunities", setOpportunities, "campus-opportunities");
       applyResource("announcements", setAnnouncements, "campus-announcements");
       applyResource("events", setEvents, "campus-events");
+      if (currentRole === "admin") {
+        const result = resources.adminApplications;
+        if (result?.status === "fulfilled") setAdminApplications(result.value);
+      }
       if (currentRole === "student") {
         applyResource("bookmarks", setBookmarks, "campus-bookmarks", (data) =>
           data.map((bookmark) => bookmark.opportunityId),
@@ -265,6 +288,12 @@ export function CampusProvider({ children }) {
     setCurrentRole(null);
     localStorage.removeItem("campus-auth-user");
     localStorage.removeItem("campus-role");
+    clearStudentSessionData();
+  }
+
+  function reportMutationError(error) {
+    setApiNotice(error.message || "The request could not be completed.");
+    throw error;
   }
 
   async function addOpportunity(opportunity) {
@@ -289,90 +318,177 @@ export function CampusProvider({ children }) {
 
       setApiNotice("");
       return createdOpportunity;
-    } catch {
-      const createdOpportunity = {
-        ...opportunity,
-        id: `opp-${Date.now()}`,
-      };
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
 
-      setOpportunities((currentOpportunities) => {
-        const updatedOpportunities = [
-          createdOpportunity,
-          ...currentOpportunities,
-        ];
-
-        localStorage.setItem(
-          "campus-opportunities",
-          JSON.stringify(updatedOpportunities),
-        );
-
-        return updatedOpportunities;
-      });
-
-      setApiNotice(
-        "The opportunity was saved only in this browser because the API is unavailable.",
+  async function updateOpportunity(opportunityId, updates) {
+    try {
+      const updatedOpportunity = await campusApi.updateOpportunity(
+        opportunityId,
+        updates,
       );
-      return createdOpportunity;
+      setOpportunities((current) => {
+        const next = current.map((item) =>
+          item.id === opportunityId ? updatedOpportunity : item,
+        );
+        localStorage.setItem("campus-opportunities", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+      return updatedOpportunity;
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
+
+  async function deleteOpportunity(opportunityId) {
+    try {
+      await campusApi.deleteOpportunity(opportunityId);
+      setOpportunities((current) => {
+        const next = current.filter((item) => item.id !== opportunityId);
+        localStorage.setItem("campus-opportunities", JSON.stringify(next));
+        return next;
+      });
+      setBookmarks((current) => {
+        const next = current.filter((id) => id !== opportunityId);
+        localStorage.setItem("campus-bookmarks", JSON.stringify(next));
+        return next;
+      });
+      setTrackerEntries((current) => {
+        const next = current.filter(
+          (entry) => entry.opportunityId !== opportunityId,
+        );
+        localStorage.setItem("campus-tracker-entries", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+    } catch (error) {
+      return reportMutationError(error);
     }
   }
 
   async function addAnnouncement(announcement) {
-    let createdAnnouncement;
-
     try {
-      createdAnnouncement = await campusApi.createAnnouncement(announcement);
+      const createdAnnouncement = await campusApi.createAnnouncement(announcement);
       setApiNotice("");
-    } catch {
-      createdAnnouncement = {
-        ...announcement,
-        body: announcement.body || announcement.message,
-        id: `ann-${Date.now()}`,
-      };
-      setApiNotice(
-        "The announcement was saved only in this browser because the API is unavailable.",
-      );
+      setAnnouncements((currentAnnouncements) => {
+        const updatedAnnouncements = [createdAnnouncement, ...currentAnnouncements];
+        localStorage.setItem(
+          "campus-announcements",
+          JSON.stringify(updatedAnnouncements),
+        );
+        return updatedAnnouncements;
+      });
+      return createdAnnouncement;
+    } catch (error) {
+      return reportMutationError(error);
     }
+  }
 
-    setAnnouncements((currentAnnouncements) => {
-      const updatedAnnouncements = [
-        createdAnnouncement,
-        ...currentAnnouncements.filter(
-          (item) => item.id !== createdAnnouncement.id,
-        ),
-      ];
-      localStorage.setItem(
-        "campus-announcements",
-        JSON.stringify(updatedAnnouncements),
-      );
-      return updatedAnnouncements;
-    });
+  async function updateAnnouncement(announcementId, updates) {
+    try {
+      const updated = await campusApi.updateAnnouncement(announcementId, updates);
+      setAnnouncements((current) => {
+        const next = current.map((item) =>
+          item.id === announcementId ? updated : item,
+        );
+        localStorage.setItem("campus-announcements", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+      return updated;
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
 
-    return createdAnnouncement;
+  async function deleteAnnouncement(announcementId) {
+    try {
+      await campusApi.deleteAnnouncement(announcementId);
+      setAnnouncements((current) => {
+        const next = current.filter((item) => item.id !== announcementId);
+        localStorage.setItem("campus-announcements", JSON.stringify(next));
+        return next;
+      });
+      setReadAnnouncementIds((current) => {
+        const next = current.filter((id) => id !== announcementId);
+        localStorage.setItem("campus-read-announcements", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
+
+  async function addEvent(event) {
+    try {
+      const created = await campusApi.createEvent(event);
+      setEvents((current) => {
+        const next = [...current, created].sort(
+          (first, second) => new Date(first.startsAt) - new Date(second.startsAt),
+        );
+        localStorage.setItem("campus-events", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+      return created;
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
+
+  async function updateEvent(eventId, updates) {
+    try {
+      const updated = await campusApi.updateEvent(eventId, updates);
+      setEvents((current) => {
+        const next = current
+          .map((item) => (item.id === eventId ? updated : item))
+          .sort(
+            (first, second) => new Date(first.startsAt) - new Date(second.startsAt),
+          );
+        localStorage.setItem("campus-events", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+      return updated;
+    } catch (error) {
+      return reportMutationError(error);
+    }
+  }
+
+  async function deleteEvent(eventId) {
+    try {
+      await campusApi.deleteEvent(eventId);
+      setEvents((current) => {
+        const next = current.filter((item) => item.id !== eventId);
+        localStorage.setItem("campus-events", JSON.stringify(next));
+        return next;
+      });
+      setApiNotice("");
+    } catch (error) {
+      return reportMutationError(error);
+    }
   }
 
   async function toggleBookmark(opportunityId) {
     const isBookmarked = bookmarks.includes(opportunityId);
-    const updatedBookmarks = bookmarks.includes(opportunityId)
-      ? bookmarks.filter((id) => id !== opportunityId)
-      : [...bookmarks, opportunityId];
-
-    setBookmarks(updatedBookmarks);
-    localStorage.setItem(
-      "campus-bookmarks",
-      JSON.stringify(updatedBookmarks),
-    );
-
     try {
       if (isBookmarked) {
         await campusApi.deleteBookmark(opportunityId);
       } else {
         await campusApi.createBookmark(opportunityId);
       }
+      const updatedBookmarks = isBookmarked
+        ? bookmarks.filter((id) => id !== opportunityId)
+        : [...bookmarks, opportunityId];
+      setBookmarks(updatedBookmarks);
+      localStorage.setItem("campus-bookmarks", JSON.stringify(updatedBookmarks));
       setApiNotice("");
-    } catch {
-      setApiNotice(
-        "The bookmark was saved only in this browser because the API is unavailable.",
-      );
+    } catch (error) {
+      return reportMutationError(error);
     }
   }
 
@@ -382,74 +498,60 @@ export function CampusProvider({ children }) {
   }
 
   async function addTrackerEntry(entry) {
-    let createdEntry;
     try {
-      createdEntry = await campusApi.createApplication(entry);
+      const createdEntry = await campusApi.createApplication(entry);
       setApiNotice("");
-    } catch {
-      createdEntry = { ...entry, id: `tracker-${Date.now()}` };
-      setApiNotice(
-        "The tracker entry was saved only in this browser because the API is unavailable.",
-      );
+      saveTrackerEntries([createdEntry, ...trackerEntries]);
+      return createdEntry;
+    } catch (error) {
+      return reportMutationError(error);
     }
-    saveTrackerEntries([createdEntry, ...trackerEntries]);
-    return createdEntry;
   }
 
   async function updateTrackerEntry(entryId, updates) {
-    let updatedEntry;
     try {
-      updatedEntry = await campusApi.updateApplication(entryId, updates);
+      const updatedEntry = await campusApi.updateApplication(entryId, updates);
       setApiNotice("");
-    } catch {
-      updatedEntry = { ...updates, id: entryId };
-      setApiNotice(
-        "The tracker update was saved only in this browser because the API is unavailable.",
+      saveTrackerEntries(
+        trackerEntries.map((entry) =>
+          entry.id === entryId ? { ...entry, ...updatedEntry } : entry,
+        ),
       );
+      return updatedEntry;
+    } catch (error) {
+      return reportMutationError(error);
     }
-    saveTrackerEntries(
-      trackerEntries.map((entry) =>
-        entry.id === entryId ? { ...entry, ...updatedEntry } : entry,
-      ),
-    );
-    return updatedEntry;
   }
 
   async function deleteTrackerEntry(entryId) {
     try {
       await campusApi.deleteApplication(entryId);
       setApiNotice("");
-    } catch {
-      setApiNotice(
-        "The tracker entry was removed only in this browser because the API is unavailable.",
-      );
+      saveTrackerEntries(trackerEntries.filter((entry) => entry.id !== entryId));
+    } catch (error) {
+      return reportMutationError(error);
     }
-    saveTrackerEntries(trackerEntries.filter((entry) => entry.id !== entryId));
   }
 
   async function toggleAnnouncementRead(announcementId) {
     const isRead = readAnnouncementIds.includes(announcementId);
-    const updatedIds = readAnnouncementIds.includes(announcementId)
-      ? readAnnouncementIds.filter((id) => id !== announcementId)
-      : [...readAnnouncementIds, announcementId];
-
-    setReadAnnouncementIds(updatedIds);
-    localStorage.setItem(
-      "campus-read-announcements",
-      JSON.stringify(updatedIds),
-    );
-
     try {
       if (isRead) {
         await campusApi.markAnnouncementUnread(announcementId);
       } else {
         await campusApi.markAnnouncementRead(announcementId);
       }
-      setApiNotice("");
-    } catch {
-      setApiNotice(
-        "The read status was saved only in this browser because the API is unavailable.",
+      const updatedIds = isRead
+        ? readAnnouncementIds.filter((id) => id !== announcementId)
+        : [...readAnnouncementIds, announcementId];
+      setReadAnnouncementIds(updatedIds);
+      localStorage.setItem(
+        "campus-read-announcements",
+        JSON.stringify(updatedIds),
       );
+      setApiNotice("");
+    } catch (error) {
+      return reportMutationError(error);
     }
   }
 
@@ -463,17 +565,8 @@ export function CampusProvider({ children }) {
       );
       setApiNotice("");
       return updatedStudent;
-    } catch {
-      const updatedStudent = { ...student, ...updates };
-      setStudent(updatedStudent);
-      localStorage.setItem(
-        "campus-student-profile",
-        JSON.stringify(updatedStudent),
-      );
-      setApiNotice(
-        "The profile update was saved only in this browser because the API is unavailable.",
-      );
-      return updatedStudent;
+    } catch (error) {
+      return reportMutationError(error);
     }
   }
 
@@ -485,8 +578,7 @@ export function CampusProvider({ children }) {
     [opportunities, student, trackerEntries],
   );
 
-  const value = useMemo(
-    () => ({
+  const value = {
       currentUser,
       currentRole,
       opportunities:
@@ -495,6 +587,7 @@ export function CampusProvider({ children }) {
       events,
       bookmarks,
       trackerEntries,
+      adminApplications,
       readAnnouncementIds,
       unreadAnnouncementCount,
       apiNotice,
@@ -504,7 +597,14 @@ export function CampusProvider({ children }) {
       login,
       logout,
       addOpportunity,
+      updateOpportunity,
+      deleteOpportunity,
       addAnnouncement,
+      updateAnnouncement,
+      deleteAnnouncement,
+      addEvent,
+      updateEvent,
+      deleteEvent,
       toggleBookmark,
       addTrackerEntry,
       updateTrackerEntry,
@@ -512,24 +612,7 @@ export function CampusProvider({ children }) {
       toggleAnnouncementRead,
       updateStudentProfile,
       clearApiNotice: () => setApiNotice(""),
-    }),
-    [
-      currentUser,
-      currentRole,
-      opportunities,
-      studentOpportunities,
-      announcements,
-      events,
-      bookmarks,
-      trackerEntries,
-      readAnnouncementIds,
-      unreadAnnouncementCount,
-      apiNotice,
-      isInitialLoading,
-      isAuthLoading,
-      student,
-    ],
-  );
+  };
 
   return (
     <CampusContext.Provider value={value}>{children}</CampusContext.Provider>

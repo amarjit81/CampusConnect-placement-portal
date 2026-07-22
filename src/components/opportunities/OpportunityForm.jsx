@@ -3,6 +3,7 @@ import { useState } from "react";
 const initialForm = {
   company: "",
   role: "",
+  opportunityType: "full-time",
   description: "",
   location: "",
   package: "",
@@ -15,8 +16,19 @@ const initialForm = {
   status: "active",
 };
 
-function OpportunityForm({ onSubmit, isSubmitting = false }) {
-  const [form, setForm] = useState(initialForm);
+function OpportunityForm({ onSubmit, initialValues, isSubmitting = false }) {
+  const [form, setForm] = useState(() =>
+    initialValues
+      ? {
+          ...initialForm,
+          ...initialValues,
+          eligibleBranches: initialValues.eligibleBranches?.join(", ") || "",
+          minimumCgpa: String(initialValues.minimumCgpa ?? ""),
+          maximumBacklogs: String(initialValues.maximumBacklogs ?? ""),
+          graduationYear: String(initialValues.graduationYear ?? ""),
+        }
+      : initialForm,
+  );
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -35,7 +47,6 @@ function OpportunityForm({ onSubmit, isSubmitting = false }) {
       maximumBacklogs: Number(form.maximumBacklogs),
       graduationYear: Number(form.graduationYear),
     });
-    setForm(initialForm);
   }
 
   return (
@@ -70,6 +81,18 @@ function OpportunityForm({ onSubmit, isSubmitting = false }) {
             />
           </label>
           <label>
+            Opportunity type
+            <select
+              name="opportunityType"
+              value={form.opportunityType}
+              onChange={handleChange}
+            >
+              <option value="full-time">Full-time</option>
+              <option value="internship">Internship</option>
+              <option value="internship-and-full-time">Internship + full-time</option>
+            </select>
+          </label>
+          <label>
             Location
             <input
               name="location"
@@ -99,6 +122,14 @@ function OpportunityForm({ onSubmit, isSubmitting = false }) {
               rows="5"
               required
             />
+          </label>
+          <label>
+            Publication status
+            <select name="status" value={form.status} onChange={handleChange}>
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="closed">Closed</option>
+            </select>
           </label>
         </div>
       </div>
@@ -188,7 +219,11 @@ function OpportunityForm({ onSubmit, isSubmitting = false }) {
           type="submit"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Publishing..." : "Publish opportunity"}
+          {isSubmitting
+            ? "Saving..."
+            : initialValues
+              ? "Save changes"
+              : "Publish opportunity"}
         </button>
       </div>
     </form>

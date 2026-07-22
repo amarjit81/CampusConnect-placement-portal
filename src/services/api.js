@@ -1,6 +1,16 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+  import.meta.env?.VITE_API_URL || "http://localhost:8080/api";
 const AUTH_TOKEN_KEY = "campus-auth-token";
+
+export class ApiError extends Error {
+  constructor(message, { status = 0, data = null, isNetworkError = false } = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+    this.isNetworkError = isNetworkError;
+  }
+}
 
 export function setAuthToken(token) {
   if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -13,14 +23,21 @@ export function getAuthToken() {
 
 async function request(path, options = {}) {
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+  } catch {
+    throw new ApiError("The CampusConnect API is unavailable.", {
+      isNetworkError: true,
+    });
+  }
 
   const data = await response.json().catch(() => null);
 
@@ -29,7 +46,10 @@ async function request(path, options = {}) {
       setAuthToken(null);
       window.dispatchEvent(new Event("campus-auth-expired"));
     }
-    throw new Error(data?.message || `API request failed (${response.status})`);
+    throw new ApiError(
+      data?.message || `API request failed (${response.status})`,
+      { status: response.status, data },
+    );
   }
 
   return data;
@@ -48,13 +68,36 @@ export const campusApi = {
       method: "POST",
       body: JSON.stringify(opportunity),
     }),
+  updateOpportunity: (opportunityId, updates) =>
+    request(`/opportunities/${opportunityId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    }),
+  deleteOpportunity: (opportunityId) =>
+    request(`/opportunities/${opportunityId}`, { method: "DELETE" }),
   getAnnouncements: () => request("/announcements"),
   createAnnouncement: (announcement) =>
     request("/announcements", {
       method: "POST",
       body: JSON.stringify(announcement),
     }),
+  updateAnnouncement: (announcementId, updates) =>
+    request(`/announcements/${announcementId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    }),
+  deleteAnnouncement: (announcementId) =>
+    request(`/announcements/${announcementId}`, { method: "DELETE" }),
   getEvents: () => request("/events"),
+  createEvent: (event) =>
+    request("/events", { method: "POST", body: JSON.stringify(event) }),
+  updateEvent: (eventId, updates) =>
+    request(`/events/${eventId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    }),
+  deleteEvent: (eventId) =>
+    request(`/events/${eventId}`, { method: "DELETE" }),
   getBookmarks: () => request("/bookmarks"),
   createBookmark: (opportunityId) =>
     request(`/bookmarks/${opportunityId}`, { method: "POST" }),

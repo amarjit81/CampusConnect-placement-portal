@@ -7,12 +7,18 @@ function AddOpportunityPage() {
   const { addOpportunity } = useCampus();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(opportunity) {
     setIsSubmitting(true);
-    await addOpportunity(opportunity);
-    setIsSubmitting(false);
-    navigate("/admin/opportunities");
+    setError("");
+    try {
+      await addOpportunity(opportunity);
+      navigate("/admin/opportunities");
+    } catch (requestError) {
+      setError(requestError.message);
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -26,6 +32,7 @@ function AddOpportunityPage() {
           </p>
         </div>
       </div>
+      {error && <p className="form-error" role="alert">{error}</p>}
       <OpportunityForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   );

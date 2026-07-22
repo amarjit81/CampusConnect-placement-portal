@@ -5,6 +5,8 @@ const adminLinks = [
   { label: "Dashboard", path: "/admin/dashboard", icon: "⌂" },
   { label: "Opportunities", path: "/admin/opportunities", icon: "▣" },
   { label: "Add opportunity", path: "/admin/opportunities/new", icon: "+" },
+  { label: "Events", path: "/admin/events", icon: "◇" },
+  { label: "Applications", path: "/admin/applications", icon: "✓" },
   { label: "Announcements", path: "/admin/announcements", icon: "◉" },
 ];
 
@@ -15,6 +17,7 @@ const studentLinks = [
   { label: "Upcoming Events", path: "/student/events", icon: "◇" },
   { label: "Bookmarks", path: "/student/bookmarks", icon: "★" },
   { label: "Announcements", path: "/student/announcements", icon: "◉" },
+  { label: "Profile", path: "/student/profile", icon: "○" },
 ];
 
 function Sidebar({ role, mobileOpen, onClose }) {
@@ -59,7 +62,7 @@ function Sidebar({ role, mobileOpen, onClose }) {
 
         <div className="sidebar__footer">
           <p>Version 1</p>
-          <span>Frontend prototype</span>
+          <span>Placement management</span>
         </div>
       </aside>
     </>

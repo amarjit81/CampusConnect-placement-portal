@@ -15,8 +15,13 @@ function BookmarkButton({ opportunityId, compact = false }) {
         event.preventDefault();
         event.stopPropagation();
         setIsUpdating(true);
-        await toggleBookmark(opportunityId);
-        setIsUpdating(false);
+        try {
+          await toggleBookmark(opportunityId);
+        } catch {
+          // The shared API notice displays the server error.
+        } finally {
+          setIsUpdating(false);
+        }
       }}
       aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
     >

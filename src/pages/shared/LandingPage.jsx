@@ -12,7 +12,7 @@ function LandingPage() {
           </div>
         </div>
         <Link className="button button--light" to="/login">
-          Open demo
+          Sign in
         </Link>
       </header>
 
@@ -26,7 +26,7 @@ function LandingPage() {
           </p>
           <div className="hero__actions">
             <Link className="button button--primary button--large" to="/login">
-              Explore the prototype
+              Open CampusConnect
             </Link>
             <a className="button button--text button--large" href="#features">
               See what is included ↓
@@ -85,7 +85,7 @@ function LandingPage() {
           <article>
             <span>03</span>
             <h3>Built to grow</h3>
-            <p>Ready for an Express, MongoDB, and JWT backend in the next version.</p>
+            <p>Built on an authenticated Express, MongoDB, and JWT backend.</p>
           </article>
         </div>
       </section>

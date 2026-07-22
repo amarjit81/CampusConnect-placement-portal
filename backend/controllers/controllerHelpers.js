@@ -7,6 +7,9 @@ function pickFields(data, allowedFields) {
 }
 
 function sendDatabaseError(res, error, resource) {
+  if (error?.code === 11000) {
+    return res.status(409).json({ message: `${resource} already exists` });
+  }
   if (error.statusCode) {
     return res.status(error.statusCode).json({ message: error.message });
   }

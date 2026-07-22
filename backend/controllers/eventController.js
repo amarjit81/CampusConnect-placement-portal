@@ -78,7 +78,14 @@ function serializeEvent(document) {
 
 async function getEvents(req, res) {
   try {
-    const filter = req.query.upcoming === "true" ? { startsAt: { $gte: new Date() } } : {};
+    const filter = {
+      ...(req.query.upcoming === "true"
+        ? { startsAt: { $gte: new Date() } }
+        : {}),
+      ...(req.user?.role === "student"
+        ? { audience: { $in: ["all", "students"] } }
+        : {}),
+    };
     const events = await Event.find(filter).sort({ startsAt: 1 });
     return res.status(200).json(events.map(serializeEvent));
   } catch (error) {
@@ -90,6 +97,12 @@ async function getEventById(req, res) {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: "Event not found" });
+    if (
+      req.user?.role === "student" &&
+      !["all", "students"].includes(event.audience)
+    ) {
+      return res.status(404).json({ message: "Event not found" });
+    }
     return res.status(200).json(serializeEvent(event));
   } catch (error) {
     return sendDatabaseError(res, error, "Event");

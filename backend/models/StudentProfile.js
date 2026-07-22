@@ -62,7 +62,10 @@ const studentProfileSchema = new mongoose.Schema(
     resumeUrl: {
       type: String,
       trim: true,
-      match: [/^https?:\/\//i, "Resume URL must start with http:// or https://"],
+      match: [
+        /^(?:https?:\/\/.*)?$/i,
+        "Resume URL must start with http:// or https://",
+      ],
     },
   },
   { timestamps: true },

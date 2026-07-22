@@ -1,7 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { Opportunity, Announcement } = require("../models");
+const {
+  Opportunity,
+  Announcement,
+  AnnouncementRead,
+} = require("../models");
 const opportunityController = require("../controllers/opportunityController");
 const announcementController = require("../controllers/announcementController");
 
@@ -267,17 +271,26 @@ test("announcement update enables validation", async () => {
 
 test("announcement can be deleted", async () => {
   await withMock(
-    Announcement,
-    "findByIdAndDelete",
-    async () => announcementRecord(),
+    AnnouncementRead,
+    "deleteMany",
+    async (filter) => {
+      assert.equal(String(filter.announcement), "507f1f77bcf86cd799439012");
+    },
     async () => {
-      const res = createResponse();
-      await announcementController.deleteAnnouncement(
-        { params: { id: "id" } },
-        res,
+      await withMock(
+        Announcement,
+        "findByIdAndDelete",
+        async () => announcementRecord(),
+        async () => {
+          const res = createResponse();
+          await announcementController.deleteAnnouncement(
+            { params: { id: "id" } },
+            res,
+          );
+          assert.equal(res.statusCode, 200);
+          assert.match(res.body.message, /deleted/i);
+        },
       );
-      assert.equal(res.statusCode, 200);
-      assert.match(res.body.message, /deleted/i);
     },
   );
 });

@@ -1,4 +1,4 @@
-const { Announcement } = require("../models");
+const { Announcement, AnnouncementRead } = require("../models");
 
 const writableFields = [
   "title",
@@ -50,6 +50,9 @@ function serializeAnnouncement(document) {
 }
 
 function sendDatabaseError(res, error) {
+  if (error?.code === 11000) {
+    return res.status(409).json({ message: "Announcement already exists" });
+  }
   if (error.name === "ValidationError" || error.name === "CastError") {
     return res.status(400).json({ message: error.message });
   }
@@ -60,7 +63,11 @@ function sendDatabaseError(res, error) {
 
 async function getAnnouncements(req, res) {
   try {
-    const announcements = await Announcement.find().sort({ publishedAt: -1 });
+    const filter =
+      req.user?.role === "student"
+        ? { audience: { $in: ["all", "students"] } }
+        : {};
+    const announcements = await Announcement.find(filter).sort({ publishedAt: -1 });
     return res.status(200).json(announcements.map(serializeAnnouncement));
   } catch (error) {
     return sendDatabaseError(res, error);
@@ -72,6 +79,12 @@ async function getAnnouncementById(req, res) {
     const announcement = await Announcement.findById(req.params.id);
 
     if (!announcement) {
+      return res.status(404).json({ message: "Announcement not found" });
+    }
+    if (
+      req.user?.role === "student" &&
+      !["all", "students"].includes(announcement.audience)
+    ) {
       return res.status(404).json({ message: "Announcement not found" });
     }
 
@@ -122,6 +135,8 @@ async function deleteAnnouncement(req, res) {
     if (!announcement) {
       return res.status(404).json({ message: "Announcement not found" });
     }
+
+    await AnnouncementRead.deleteMany({ announcement: announcement._id });
 
     return res.status(200).json({ message: "Announcement deleted successfully" });
   } catch (error) {

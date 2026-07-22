@@ -7,7 +7,10 @@ const attachmentSchema = new mongoose.Schema(
     url: {
       type: String,
       trim: true,
-      match: [/^https?:\/\//i, "Attachment URL must start with http:// or https://"],
+      match: [
+        /^(?:https?:\/\/.*)?$/i,
+        "Attachment URL must start with http:// or https://",
+      ],
     },
   },
   { _id: false },

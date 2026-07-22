@@ -85,7 +85,7 @@ const eventSchema = new mongoose.Schema(
       type: String,
       trim: true,
       match: [
-        /^https?:\/\//i,
+        /^(?:https?:\/\/.*)?$/i,
         "Registration link must start with http:// or https://",
       ],
     },

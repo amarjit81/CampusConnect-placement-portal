@@ -16,7 +16,10 @@ async function getReadAnnouncements(req, res) {
 async function markAnnouncementRead(req, res) {
   try {
     const student = req.user;
-    const announcement = await Announcement.findById(req.params.announcementId);
+    const announcement = await Announcement.findOne({
+      _id: req.params.announcementId,
+      audience: { $in: ["all", "students"] },
+    });
     if (!announcement) {
       return res.status(404).json({ message: "Announcement not found" });
     }

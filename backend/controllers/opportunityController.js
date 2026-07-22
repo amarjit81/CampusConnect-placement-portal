@@ -1,4 +1,4 @@
-const { Opportunity } = require("../models");
+const { Application, Bookmark, Event, Opportunity } = require("../models");
 
 const writableFields = [
   "company",
@@ -51,6 +51,9 @@ function serializeOpportunity(document) {
 }
 
 function sendDatabaseError(res, error) {
+  if (error?.code === 11000) {
+    return res.status(409).json({ message: "Opportunity already exists" });
+  }
   if (error.name === "ValidationError" || error.name === "CastError") {
     return res.status(400).json({ message: error.message });
   }
@@ -61,7 +64,8 @@ function sendDatabaseError(res, error) {
 
 async function getOpportunities(req, res) {
   try {
-    const opportunities = await Opportunity.find().sort({ createdAt: -1 });
+    const filter = req.user?.role === "student" ? { status: { $ne: "draft" } } : {};
+    const opportunities = await Opportunity.find(filter).sort({ createdAt: -1 });
     return res.status(200).json(opportunities.map(serializeOpportunity));
   } catch (error) {
     return sendDatabaseError(res, error);
@@ -73,6 +77,9 @@ async function getOpportunityById(req, res) {
     const opportunity = await Opportunity.findById(req.params.id);
 
     if (!opportunity) {
+      return res.status(404).json({ message: "Opportunity not found" });
+    }
+    if (req.user?.role === "student" && opportunity.status === "draft") {
       return res.status(404).json({ message: "Opportunity not found" });
     }
 
@@ -123,6 +130,15 @@ async function deleteOpportunity(req, res) {
     if (!opportunity) {
       return res.status(404).json({ message: "Opportunity not found" });
     }
+
+    await Promise.all([
+      Application.deleteMany({ opportunity: opportunity._id }),
+      Bookmark.deleteMany({ opportunity: opportunity._id }),
+      Event.updateMany(
+        { opportunity: opportunity._id },
+        { $unset: { opportunity: 1 } },
+      ),
+    ]);
 
     return res.status(200).json({ message: "Opportunity deleted successfully" });
   } catch (error) {

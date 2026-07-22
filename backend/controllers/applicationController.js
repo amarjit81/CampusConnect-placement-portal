@@ -41,6 +41,11 @@ function serializeApplication(document) {
     opportunityId: opportunity
       ? String(opportunity._id || opportunity)
       : null,
+    studentId: application.student
+      ? String(application.student._id || application.student)
+      : null,
+    studentName: application.student?.name,
+    studentEmail: application.student?.email,
     company: application.company || opportunity?.company,
     role: application.role || opportunity?.role,
     appliedDate: new Date(application.appliedAt).toISOString().slice(0, 10),
@@ -56,9 +61,10 @@ function serializeApplication(document) {
 
 async function getApplications(req, res) {
   try {
-    const student = req.user;
-    const applications = await Application.find({ student: student._id })
+    const filter = req.user.role === "admin" ? {} : { student: req.user._id };
+    const applications = await Application.find(filter)
       .populate("opportunity", "company role")
+      .populate("student", "name email")
       .sort({ appliedAt: -1 });
     return res.status(200).json(applications.map(serializeApplication));
   } catch (error) {
@@ -68,11 +74,13 @@ async function getApplications(req, res) {
 
 async function getApplicationById(req, res) {
   try {
-    const student = req.user;
-    const application = await Application.findOne({
+    const filter = {
       _id: req.params.id,
-      student: student._id,
-    }).populate("opportunity", "company role");
+      ...(req.user.role === "student" ? { student: req.user._id } : {}),
+    };
+    const application = await Application.findOne(filter)
+      .populate("opportunity", "company role")
+      .populate("student", "name email");
     if (!application) {
       return res.status(404).json({ message: "Application not found" });
     }
@@ -88,9 +96,12 @@ async function createApplication(req, res) {
     const fields = buildApplicationFields(req.body);
     let opportunity;
     if (req.body.opportunityId) {
-      opportunity = await Opportunity.findById(req.body.opportunityId);
+      opportunity = await Opportunity.findOne({
+        _id: req.body.opportunityId,
+        status: "active",
+      });
       if (!opportunity) {
-        return res.status(404).json({ message: "Opportunity not found" });
+        return res.status(404).json({ message: "Active opportunity not found" });
       }
       fields.opportunity = opportunity._id;
     }

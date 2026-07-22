@@ -31,7 +31,10 @@ async function getBookmarks(req, res) {
 async function createBookmark(req, res) {
   try {
     const student = req.user;
-    const opportunity = await Opportunity.findById(req.params.opportunityId);
+    const opportunity = await Opportunity.findOne({
+      _id: req.params.opportunityId,
+      status: { $ne: "draft" },
+    });
     if (!opportunity) {
       return res.status(404).json({ message: "Opportunity not found" });
     }

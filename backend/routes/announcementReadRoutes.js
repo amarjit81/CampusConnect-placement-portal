@@ -4,11 +4,12 @@ const {
   markAnnouncementRead,
   markAnnouncementUnread,
 } = require("../controllers/announcementReadController");
+const { authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.get("/", getReadAnnouncements);
-router.put("/:announcementId", markAnnouncementRead);
-router.delete("/:announcementId", markAnnouncementUnread);
+router.get("/", authorize("student"), getReadAnnouncements);
+router.put("/:announcementId", authorize("student"), markAnnouncementRead);
+router.delete("/:announcementId", authorize("student"), markAnnouncementUnread);
 
 module.exports = router;

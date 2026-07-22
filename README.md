@@ -23,8 +23,9 @@ Express/MongoDB backend.
 
 The frontend is integrated with the server APIs for opportunities,
 announcements, events, bookmarks, applications, profiles, and announcement
-read state. Saved browser data remains available as an offline fallback. Until
-authentication is added, the APIs use the active seeded Admin or Student.
+read state. Email/password login uses an eight-hour JWT session, and the API
+enforces administrator and student permissions. Saved browser data remains
+available as an offline fallback after sign-in.
 
 ## Requirements
 
@@ -52,6 +53,7 @@ The default connection is:
 
 ```env
 MONGODB_URI=mongodb://127.0.0.1:27017/campusconnect
+JWT_SECRET=replace-with-a-long-random-secret
 ```
 
 The frontend defaults to `http://localhost:8080/api`. To use another API host,
@@ -97,6 +99,13 @@ npm run db:verify
 ```
 
 ## API
+
+All feature endpoints require `Authorization: Bearer <token>`.
+
+### Authentication
+
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
 ### Opportunities
 
@@ -155,8 +164,8 @@ milestone:
 - Admin: `admin@campusconnect.edu` / `Admin@123`
 - Student: `student@campusconnect.edu` / `Student@123`
 
-The current login screen still uses role-based demo access and does not accept
-these credentials yet.
+The login screen accepts these credentials and routes each account to its
+role-specific workspace.
 
 ## Project structure
 

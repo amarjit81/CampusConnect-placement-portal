@@ -1,9 +1,5 @@
 const { Event } = require("../models");
-const {
-  pickFields,
-  sendDatabaseError,
-  findDemoUser,
-} = require("./controllerHelpers");
+const { pickFields, sendDatabaseError } = require("./controllerHelpers");
 
 const writableFields = [
   "title",
@@ -102,10 +98,9 @@ async function getEventById(req, res) {
 
 async function createEvent(req, res) {
   try {
-    const admin = await findDemoUser("admin");
     const event = await Event.create({
       ...buildEventFields(req.body, true),
-      createdBy: admin._id,
+      createdBy: req.user._id,
     });
     return res.status(201).json(serializeEvent(event));
   } catch (error) {

@@ -1,9 +1,9 @@
 const { Announcement, AnnouncementRead } = require("../models");
-const { sendDatabaseError, findDemoUser } = require("./controllerHelpers");
+const { sendDatabaseError } = require("./controllerHelpers");
 
 async function getReadAnnouncements(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const records = await AnnouncementRead.find({ student: student._id }).lean();
     return res.status(200).json(
       records.map((record) => String(record.announcement)),
@@ -15,7 +15,7 @@ async function getReadAnnouncements(req, res) {
 
 async function markAnnouncementRead(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const announcement = await Announcement.findById(req.params.announcementId);
     if (!announcement) {
       return res.status(404).json({ message: "Announcement not found" });
@@ -37,7 +37,7 @@ async function markAnnouncementRead(req, res) {
 
 async function markAnnouncementUnread(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     await AnnouncementRead.findOneAndDelete({
       student: student._id,
       announcement: req.params.announcementId,

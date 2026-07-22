@@ -1,4 +1,4 @@
-const { Announcement, User } = require("../models");
+const { Announcement } = require("../models");
 
 const writableFields = [
   "title",
@@ -58,22 +58,6 @@ function sendDatabaseError(res, error) {
   return res.status(500).json({ message: "Unable to process announcement" });
 }
 
-async function findDefaultAdmin() {
-  const admin = await User.findOne({ role: "admin", isActive: true }).select(
-    "_id",
-  );
-
-  if (!admin) {
-    const error = new Error(
-      "No active admin account exists. Run npm run db:seed first.",
-    );
-    error.statusCode = 503;
-    throw error;
-  }
-
-  return admin;
-}
-
 async function getAnnouncements(req, res) {
   try {
     const announcements = await Announcement.find().sort({ publishedAt: -1 });
@@ -99,10 +83,9 @@ async function getAnnouncementById(req, res) {
 
 async function createAnnouncement(req, res) {
   try {
-    const admin = await findDefaultAdmin();
     const announcement = await Announcement.create({
       ...buildAnnouncementFields(req.body),
-      createdBy: admin._id,
+      createdBy: req.user._id,
     });
 
     return res.status(201).json(serializeAnnouncement(announcement));

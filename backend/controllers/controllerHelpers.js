@@ -1,5 +1,3 @@
-const { User } = require("../models");
-
 function pickFields(data, allowedFields) {
   return Object.fromEntries(
     allowedFields
@@ -23,18 +21,4 @@ function sendDatabaseError(res, error, resource) {
   return res.status(500).json({ message: `Unable to process ${resource.toLowerCase()}` });
 }
 
-async function findDemoUser(role) {
-  const user = await User.findOne({ role, isActive: true }).select(
-    "_id name email role",
-  );
-  if (!user) {
-    const error = new Error(
-      `No active ${role} account exists. Run npm run db:seed first.`,
-    );
-    error.statusCode = 503;
-    throw error;
-  }
-  return user;
-}
-
-module.exports = { pickFields, sendDatabaseError, findDemoUser };
+module.exports = { pickFields, sendDatabaseError };

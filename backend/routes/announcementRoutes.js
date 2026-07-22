@@ -6,14 +6,15 @@ const {
   updateAnnouncement,
   deleteAnnouncement,
 } = require("../controllers/announcementController");
+const { authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
 // Announcement routes used by the frontend announcements screens.
 router.get("/", getAnnouncements);
 router.get("/:id", getAnnouncementById);
-router.post("/", createAnnouncement);
-router.put("/:id", updateAnnouncement);
-router.delete("/:id", deleteAnnouncement);
+router.post("/", authorize("admin"), createAnnouncement);
+router.put("/:id", authorize("admin"), updateAnnouncement);
+router.delete("/:id", authorize("admin"), deleteAnnouncement);
 
 module.exports = router;

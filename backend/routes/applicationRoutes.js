@@ -6,13 +6,14 @@ const {
   updateApplication,
   deleteApplication,
 } = require("../controllers/applicationController");
+const { authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.get("/", getApplications);
-router.get("/:id", getApplicationById);
-router.post("/", createApplication);
-router.put("/:id", updateApplication);
-router.delete("/:id", deleteApplication);
+router.get("/", authorize("student"), getApplications);
+router.get("/:id", authorize("student"), getApplicationById);
+router.post("/", authorize("student"), createApplication);
+router.put("/:id", authorize("student"), updateApplication);
+router.delete("/:id", authorize("student"), deleteApplication);
 
 module.exports = router;

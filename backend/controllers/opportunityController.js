@@ -1,4 +1,4 @@
-const { Opportunity, User } = require("../models");
+const { Opportunity } = require("../models");
 
 const writableFields = [
   "company",
@@ -59,22 +59,6 @@ function sendDatabaseError(res, error) {
   return res.status(500).json({ message: "Unable to process opportunity" });
 }
 
-async function findDefaultAdmin() {
-  const admin = await User.findOne({ role: "admin", isActive: true }).select(
-    "_id",
-  );
-
-  if (!admin) {
-    const error = new Error(
-      "No active admin account exists. Run npm run db:seed first.",
-    );
-    error.statusCode = 503;
-    throw error;
-  }
-
-  return admin;
-}
-
 async function getOpportunities(req, res) {
   try {
     const opportunities = await Opportunity.find().sort({ createdAt: -1 });
@@ -100,10 +84,9 @@ async function getOpportunityById(req, res) {
 
 async function createOpportunity(req, res) {
   try {
-    const admin = await findDefaultAdmin();
     const opportunity = await Opportunity.create({
       ...pickWritableFields(req.body),
-      createdBy: admin._id,
+      createdBy: req.user._id,
     });
 
     return res.status(201).json(serializeOpportunity(opportunity));

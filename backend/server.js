@@ -7,6 +7,8 @@ const bookmarkRoutes = require("./routes/bookmarkRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const announcementReadRoutes = require("./routes/announcementReadRoutes");
+const authRoutes = require("./routes/authRoutes");
+const { authenticate } = require("./middleware/auth");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -16,7 +18,7 @@ const PORT = process.env.PORT || 8080;
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
@@ -33,14 +35,14 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "CampusConnect backend is running" });
 });
 
-// Feature route groups. Authentication middleware will be added later.
-app.use("/api/opportunities", opportunityRoutes);
-app.use("/api/announcements", announcementRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/api/applications", applicationRoutes);
-app.use("/api/profile", profileRoutes);
-app.use("/api/announcement-reads", announcementReadRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/opportunities", authenticate, opportunityRoutes);
+app.use("/api/announcements", authenticate, announcementRoutes);
+app.use("/api/events", authenticate, eventRoutes);
+app.use("/api/bookmarks", authenticate, bookmarkRoutes);
+app.use("/api/applications", authenticate, applicationRoutes);
+app.use("/api/profile", authenticate, profileRoutes);
+app.use("/api/announcement-reads", authenticate, announcementReadRoutes);
 
 async function startServer() {
   try {

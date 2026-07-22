@@ -1,11 +1,23 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const AUTH_TOKEN_KEY = "campus-auth-token";
+
+export function setAuthToken(token) {
+  if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+  else localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+export function getAuthToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
 
 async function request(path, options = {}) {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -13,6 +25,10 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401 && path !== "/auth/login") {
+      setAuthToken(null);
+      window.dispatchEvent(new Event("campus-auth-expired"));
+    }
     throw new Error(data?.message || `API request failed (${response.status})`);
   }
 
@@ -20,6 +36,12 @@ async function request(path, options = {}) {
 }
 
 export const campusApi = {
+  login: (credentials) =>
+    request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    }),
+  getCurrentUser: () => request("/auth/me"),
   getOpportunities: () => request("/opportunities"),
   createOpportunity: (opportunity) =>
     request("/opportunities", {

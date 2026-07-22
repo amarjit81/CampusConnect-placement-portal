@@ -1,6 +1,6 @@
 const { Bookmark, Opportunity } = require("../models");
 const { serializeOpportunity } = require("./opportunityController");
-const { sendDatabaseError, findDemoUser } = require("./controllerHelpers");
+const { sendDatabaseError } = require("./controllerHelpers");
 
 function serializeBookmark(document) {
   const bookmark = document.toObject ? document.toObject() : document;
@@ -18,7 +18,7 @@ function serializeBookmark(document) {
 
 async function getBookmarks(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const bookmarks = await Bookmark.find({ student: student._id })
       .populate("opportunity")
       .sort({ createdAt: -1 });
@@ -30,7 +30,7 @@ async function getBookmarks(req, res) {
 
 async function createBookmark(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const opportunity = await Opportunity.findById(req.params.opportunityId);
     if (!opportunity) {
       return res.status(404).json({ message: "Opportunity not found" });
@@ -49,7 +49,7 @@ async function createBookmark(req, res) {
 
 async function deleteBookmark(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const bookmark = await Bookmark.findOneAndDelete({
       student: student._id,
       opportunity: req.params.opportunityId,

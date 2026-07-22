@@ -1,9 +1,5 @@
 const { StudentProfile } = require("../models");
-const {
-  pickFields,
-  sendDatabaseError,
-  findDemoUser,
-} = require("./controllerHelpers");
+const { pickFields, sendDatabaseError } = require("./controllerHelpers");
 
 const writableFields = [
   "enrollmentNumber",
@@ -39,7 +35,7 @@ function serializeProfile(document, user) {
 
 async function getProfile(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const profile = await StudentProfile.findOne({ user: student._id });
     if (!profile) return res.status(404).json({ message: "Student profile not found" });
     return res.status(200).json(serializeProfile(profile, student));
@@ -50,7 +46,7 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const profile = await StudentProfile.findOneAndUpdate(
       { user: student._id },
       pickFields(req.body, writableFields),

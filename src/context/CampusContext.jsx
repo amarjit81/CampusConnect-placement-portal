@@ -9,7 +9,7 @@ import opportunityData from "../data/opportunities.json";
 import announcementData from "../data/announcements.json";
 import eventData from "../data/events.json";
 import studentData from "../data/student.json";
-import { campusApi } from "../services/api";
+import { campusApi, getAuthToken, setAuthToken } from "../services/api";
 
 const CampusContext = createContext();
 
@@ -99,8 +99,11 @@ function getInitialTrackerEntries() {
 }
 
 export function CampusProvider({ children }) {
-  const [currentRole, setCurrentRole] = useState(() =>
-    getStoredValue("campus-role", null),
+  const [currentUser, setCurrentUser] = useState(() =>
+    getAuthToken() ? getStoredValue("campus-auth-user", null) : null,
+  );
+  const [currentRole, setCurrentRole] = useState(
+    () => currentUser?.role || null,
   );
   const [opportunities, setOpportunities] = useState(getStoredOpportunities);
   const [announcements, setAnnouncements] = useState(getStoredAnnouncements);
@@ -118,26 +121,85 @@ export function CampusProvider({ children }) {
     getStoredValue("campus-student-profile", studentData),
   );
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(() => Boolean(getAuthToken()));
   const [apiNotice, setApiNotice] = useState("");
 
   useEffect(() => {
     let ignoreResponse = false;
 
+    async function restoreSession() {
+      if (!getAuthToken()) {
+        setIsAuthLoading(false);
+        return;
+      }
+
+      try {
+        const { user } = await campusApi.getCurrentUser();
+        if (ignoreResponse) return;
+        setCurrentUser(user);
+        setCurrentRole(user.role);
+        localStorage.setItem("campus-auth-user", JSON.stringify(user));
+      } catch {
+        if (ignoreResponse) return;
+        setAuthToken(null);
+        setCurrentUser(null);
+        setCurrentRole(null);
+        localStorage.removeItem("campus-auth-user");
+      } finally {
+        if (!ignoreResponse) setIsAuthLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    const handleExpiredSession = () => {
+      setCurrentUser(null);
+      setCurrentRole(null);
+      localStorage.removeItem("campus-auth-user");
+    };
+    window.addEventListener("campus-auth-expired", handleExpiredSession);
+
+    return () => {
+      ignoreResponse = true;
+      window.removeEventListener("campus-auth-expired", handleExpiredSession);
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignoreResponse = false;
+
     async function loadApiData() {
-      const resources = await Promise.allSettled([
-        campusApi.getOpportunities(),
-        campusApi.getAnnouncements(),
-        campusApi.getEvents(),
-        campusApi.getBookmarks(),
-        campusApi.getApplications(),
-        campusApi.getProfile(),
-        campusApi.getReadAnnouncements(),
-      ]);
+      if (!currentRole) {
+        setIsInitialLoading(false);
+        return;
+      }
+
+      setIsInitialLoading(true);
+      const loaders = {
+        opportunities: campusApi.getOpportunities,
+        announcements: campusApi.getAnnouncements,
+        events: campusApi.getEvents,
+        ...(currentRole === "student"
+          ? {
+              bookmarks: campusApi.getBookmarks,
+              applications: campusApi.getApplications,
+              profile: campusApi.getProfile,
+              readAnnouncements: campusApi.getReadAnnouncements,
+            }
+          : {}),
+      };
+      const resourceEntries = Object.entries(loaders);
+      const settledResources = await Promise.allSettled(
+        resourceEntries.map(([, load]) => load()),
+      );
+      const resources = Object.fromEntries(
+        resourceEntries.map(([name], index) => [name, settledResources[index]]),
+      );
 
       if (ignoreResponse) return;
 
-      const applyResource = (index, setter, storageKey, transform = (data) => data) => {
-        const result = resources[index];
+      const applyResource = (name, setter, storageKey, transform = (data) => data) => {
+        const result = resources[name];
         if (result.status !== "fulfilled") return;
 
         const value = transform(result.value);
@@ -145,24 +207,26 @@ export function CampusProvider({ children }) {
         localStorage.setItem(storageKey, JSON.stringify(value));
       };
 
-      applyResource(0, setOpportunities, "campus-opportunities");
-      applyResource(1, setAnnouncements, "campus-announcements");
-      applyResource(2, setEvents, "campus-events");
-      applyResource(3, setBookmarks, "campus-bookmarks", (bookmarksData) =>
-        bookmarksData.map((bookmark) => bookmark.opportunityId),
-      );
-      applyResource(4, setTrackerEntries, "campus-tracker-entries");
-      applyResource(5, setStudent, "campus-student-profile");
-      applyResource(
-        6,
-        setReadAnnouncementIds,
-        "campus-read-announcements",
-      );
+      applyResource("opportunities", setOpportunities, "campus-opportunities");
+      applyResource("announcements", setAnnouncements, "campus-announcements");
+      applyResource("events", setEvents, "campus-events");
+      if (currentRole === "student") {
+        applyResource("bookmarks", setBookmarks, "campus-bookmarks", (data) =>
+          data.map((bookmark) => bookmark.opportunityId),
+        );
+        applyResource("applications", setTrackerEntries, "campus-tracker-entries");
+        applyResource("profile", setStudent, "campus-student-profile");
+        applyResource(
+          "readAnnouncements",
+          setReadAnnouncementIds,
+          "campus-read-announcements",
+        );
+      }
 
-      const failedCount = resources.filter(
+      const failedCount = settledResources.filter(
         (result) => result.status === "rejected",
       ).length;
-      if (failedCount === resources.length) {
+      if (failedCount === settledResources.length) {
         setApiNotice(
           "The API is unavailable. CampusConnect is using saved offline data.",
         );
@@ -181,15 +245,24 @@ export function CampusProvider({ children }) {
     return () => {
       ignoreResponse = true;
     };
-  }, []);
+  }, [currentRole]);
 
-  function login(role) {
-    setCurrentRole(role);
-    localStorage.setItem("campus-role", JSON.stringify(role));
+  async function login(credentials) {
+    const { token, user } = await campusApi.login(credentials);
+    setAuthToken(token);
+    setCurrentUser(user);
+    setCurrentRole(user.role);
+    localStorage.setItem("campus-auth-user", JSON.stringify(user));
+    localStorage.removeItem("campus-role");
+    setApiNotice("");
+    return user;
   }
 
   function logout() {
+    setAuthToken(null);
+    setCurrentUser(null);
     setCurrentRole(null);
+    localStorage.removeItem("campus-auth-user");
     localStorage.removeItem("campus-role");
   }
 
@@ -409,6 +482,7 @@ export function CampusProvider({ children }) {
 
   const value = useMemo(
     () => ({
+      currentUser,
       currentRole,
       opportunities,
       announcements,
@@ -419,6 +493,7 @@ export function CampusProvider({ children }) {
       unreadAnnouncementCount,
       apiNotice,
       isInitialLoading,
+      isAuthLoading,
       student,
       login,
       logout,
@@ -433,6 +508,7 @@ export function CampusProvider({ children }) {
       clearApiNotice: () => setApiNotice(""),
     }),
     [
+      currentUser,
       currentRole,
       opportunities,
       announcements,
@@ -443,6 +519,7 @@ export function CampusProvider({ children }) {
       unreadAnnouncementCount,
       apiNotice,
       isInitialLoading,
+      isAuthLoading,
       student,
     ],
   );

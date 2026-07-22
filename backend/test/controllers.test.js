@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { Opportunity, Announcement, User } = require("../models");
+const { Opportunity, Announcement } = require("../models");
 const opportunityController = require("../controllers/opportunityController");
 const announcementController = require("../controllers/announcementController");
 
@@ -103,38 +103,33 @@ test("opportunity can be fetched by id", async () => {
   );
 });
 
-test("opportunity creation assigns the active admin and ignores protected fields", async () => {
+test("opportunity creation assigns the authenticated admin and ignores protected fields", async () => {
   let createdData;
   await withMock(
-    User,
-    "findOne",
-    () => ({ select: async () => ({ _id: "admin-id" }) }),
-    async () =>
-      withMock(
-        Opportunity,
-        "create",
-        async (data) => {
-          createdData = data;
-          return opportunityRecord(data);
+    Opportunity,
+    "create",
+    async (data) => {
+      createdData = data;
+      return opportunityRecord(data);
+    },
+    async () => {
+      const res = createResponse();
+      await opportunityController.createOpportunity(
+        {
+          user: { _id: "admin-id", role: "admin" },
+          body: {
+            ...opportunityRecord(),
+            _id: "malicious-id",
+            createdBy: "another-user",
+          },
         },
-        async () => {
-          const res = createResponse();
-          await opportunityController.createOpportunity(
-            {
-              body: {
-                ...opportunityRecord(),
-                _id: "malicious-id",
-                createdBy: "another-user",
-              },
-            },
-            res,
-          );
+        res,
+      );
 
-          assert.equal(res.statusCode, 201);
-          assert.equal(createdData.createdBy, "admin-id");
-          assert.equal(createdData._id, undefined);
-        },
-      ),
+      assert.equal(res.statusCode, 201);
+      assert.equal(createdData.createdBy, "admin-id");
+      assert.equal(createdData._id, undefined);
+    },
   );
 });
 
@@ -217,40 +212,35 @@ test("announcement can be fetched by id", async () => {
   );
 });
 
-test("announcement creation maps frontend date and supplies body", async () => {
+test("announcement creation uses the authenticated admin and maps frontend fields", async () => {
   let createdData;
   await withMock(
-    User,
-    "findOne",
-    () => ({ select: async () => ({ _id: "admin-id" }) }),
-    async () =>
-      withMock(
-        Announcement,
-        "create",
-        async (data) => {
-          createdData = data;
-          return announcementRecord(data);
+    Announcement,
+    "create",
+    async (data) => {
+      createdData = data;
+      return announcementRecord(data);
+    },
+    async () => {
+      const res = createResponse();
+      await announcementController.createAnnouncement(
+        {
+          user: { _id: "admin-id", role: "admin" },
+          body: {
+            title: "New notice",
+            message: "Read this notice.",
+            date: "2026-07-20",
+            important: false,
+          },
         },
-        async () => {
-          const res = createResponse();
-          await announcementController.createAnnouncement(
-            {
-              body: {
-                title: "New notice",
-                message: "Read this notice.",
-                date: "2026-07-20",
-                important: false,
-              },
-            },
-            res,
-          );
+        res,
+      );
 
-          assert.equal(res.statusCode, 201);
-          assert.equal(createdData.createdBy, "admin-id");
-          assert.equal(createdData.body, "Read this notice.");
-          assert.equal(createdData.publishedAt, "2026-07-20");
-        },
-      ),
+      assert.equal(res.statusCode, 201);
+      assert.equal(createdData.createdBy, "admin-id");
+      assert.equal(createdData.body, "Read this notice.");
+      assert.equal(createdData.publishedAt, "2026-07-20");
+    },
   );
 });
 

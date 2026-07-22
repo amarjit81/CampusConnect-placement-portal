@@ -1,9 +1,5 @@
 const { Application, Opportunity } = require("../models");
-const {
-  pickFields,
-  sendDatabaseError,
-  findDemoUser,
-} = require("./controllerHelpers");
+const { pickFields, sendDatabaseError } = require("./controllerHelpers");
 
 const writableFields = [
   "company",
@@ -60,7 +56,7 @@ function serializeApplication(document) {
 
 async function getApplications(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const applications = await Application.find({ student: student._id })
       .populate("opportunity", "company role")
       .sort({ appliedAt: -1 });
@@ -72,7 +68,7 @@ async function getApplications(req, res) {
 
 async function getApplicationById(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const application = await Application.findOne({
       _id: req.params.id,
       student: student._id,
@@ -88,7 +84,7 @@ async function getApplicationById(req, res) {
 
 async function createApplication(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const fields = buildApplicationFields(req.body);
     let opportunity;
     if (req.body.opportunityId) {
@@ -116,7 +112,7 @@ async function createApplication(req, res) {
 
 async function updateApplication(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const application = await Application.findOne({
       _id: req.params.id,
       student: student._id,
@@ -137,7 +133,7 @@ async function updateApplication(req, res) {
 
 async function deleteApplication(req, res) {
   try {
-    const student = await findDemoUser("student");
+    const student = req.user;
     const application = await Application.findOneAndDelete({
       _id: req.params.id,
       student: student._id,

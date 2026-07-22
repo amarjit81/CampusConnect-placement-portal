@@ -2,18 +2,47 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useCampus } from "../../context/CampusContext";
 
+const demoAccounts = {
+  student: {
+    email: "student@campusconnect.edu",
+    password: "Student@123",
+  },
+  admin: {
+    email: "admin@campusconnect.edu",
+    password: "Admin@123",
+  },
+};
+
 function LoginPage() {
-  const { currentRole, login } = useCampus();
-  const [selectedRole, setSelectedRole] = useState("student");
+  const { currentRole, isAuthLoading, login } = useCampus();
+  const [credentials, setCredentials] = useState(demoAccounts.student);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   if (currentRole) {
     return <Navigate to={`/${currentRole}/dashboard`} replace />;
   }
 
-  function handleLogin() {
-    login(selectedRole);
-    navigate(`/${selectedRole}/dashboard`);
+  function updateField(event) {
+    setCredentials((current) => ({
+      ...current,
+      [event.target.name]: event.target.value,
+    }));
+  }
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const user = await login(credentials);
+      navigate(`/${user.role}/dashboard`, { replace: true });
+    } catch (loginError) {
+      setError(loginError.message || "Unable to sign in. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -27,61 +56,67 @@ function LoginPage() {
           </div>
         </div>
         <div>
-          <p className="eyebrow">Frontend prototype</p>
+          <p className="eyebrow">Secure campus access</p>
           <h1>Your placement workspace starts here.</h1>
           <p>
-            Choose a role to explore the complete Version 1 experience. No
-            account or password is required.
+            Sign in to access the tools and placement data available for your
+            student or administrator account.
           </p>
         </div>
-        <small>React + Vite · Mock data · Local state</small>
+        <small>React + Express + MongoDB · JWT authentication</small>
       </section>
 
       <section className="login-panel login-panel--form">
-        <div className="login-card">
-          <p className="eyebrow">Demo access</p>
-          <h2>Continue as</h2>
-          <p>Select the workspace you want to preview.</p>
+        <form className="login-card login-form" onSubmit={handleLogin}>
+          <p className="eyebrow">Welcome back</p>
+          <h2>Sign in</h2>
+          <p>Use your CampusConnect account credentials.</p>
 
-          <div className="role-options">
-            <button
-              className={`role-option ${
-                selectedRole === "student" ? "role-option--active" : ""
-              }`}
-              onClick={() => setSelectedRole("student")}
-            >
-              <span>A</span>
-              <div>
-                <strong>Student</strong>
-                <small>Discover and save opportunities</small>
-              </div>
-              <b>✓</b>
-            </button>
-            <button
-              className={`role-option ${
-                selectedRole === "admin" ? "role-option--active" : ""
-              }`}
-              onClick={() => setSelectedRole("admin")}
-            >
-              <span>TP</span>
-              <div>
-                <strong>T&P Administrator</strong>
-                <small>Publish opportunities and updates</small>
-              </div>
-              <b>✓</b>
-            </button>
+          <div className="login-form__fields">
+            <label>
+              Email address
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={credentials.email}
+                onChange={updateField}
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={credentials.password}
+                onChange={updateField}
+                required
+              />
+            </label>
           </div>
+
+          {error && <p className="login-form__error" role="alert">{error}</p>}
 
           <button
             className="button button--primary button--full button--large"
-            onClick={handleLogin}
+            type="submit"
+            disabled={isSubmitting || isAuthLoading}
           >
-            Enter {selectedRole} dashboard →
+            {isSubmitting ? "Signing in…" : "Sign in →"}
           </button>
-          <p className="login-card__note">
-            This is a mock login. Authentication will be added with JWT later.
-          </p>
-        </div>
+
+          <div className="login-form__demo">
+            <span>Demo accounts</span>
+            <button type="button" onClick={() => setCredentials(demoAccounts.student)}>
+              Student
+            </button>
+            <button type="button" onClick={() => setCredentials(demoAccounts.admin)}>
+              Administrator
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   );

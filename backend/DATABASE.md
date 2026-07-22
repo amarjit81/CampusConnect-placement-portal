@@ -1,8 +1,7 @@
 # CampusConnect database
 
-CampusConnect uses MongoDB and Mongoose. The database and non-authenticated API
-layers are defined for every current feature. The frontend still needs to be
-connected to the newer APIs.
+CampusConnect uses MongoDB and Mongoose. The authenticated Express API and React
+frontend are connected for every current feature.
 
 ## Connection
 
@@ -75,5 +74,5 @@ user roles without creating or deleting data.
 - Admin: `admin@campusconnect.edu` / `Admin@123`
 - Student: `student@campusconnect.edu` / `Student@123`
 
-Passwords are stored as bcrypt hashes. Until authentication is implemented,
-existing API create operations use the first active seeded Admin account.
+Passwords are stored as bcrypt hashes. JWT authentication supplies the active
+user to every protected controller, and role middleware restricts mutations.

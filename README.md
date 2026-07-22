@@ -9,7 +9,7 @@ Express/MongoDB backend.
 ### Student workspace
 
 - Browse, search, and filter placement opportunities.
-- Check eligibility against the demo student profile.
+- Check eligibility against the authenticated student's database profile.
 - Bookmark opportunities with persistent database-backed state.
 - Maintain a persistent personal application tracker.
 - Review upcoming events and announcements.
@@ -18,8 +18,17 @@ Express/MongoDB backend.
 ### Administrator workspace
 
 - Review placement activity from the dashboard.
-- Create and browse persistent opportunities.
-- Create and browse persistent announcements.
+- Create, edit, close, and delete persistent opportunities.
+- Create, edit, target, and delete persistent announcements.
+- Create, edit, and delete placement events.
+
+### Platform capabilities
+
+- JWT authentication with student/admin role authorization.
+- Student-specific draft and audience visibility rules.
+- Authoritative database writes with clear API validation errors.
+- Security headers, request-size limits, login rate limiting, and configurable CORS.
+- Automated frontend, backend, API, visibility, and security tests.
 
 The frontend is integrated with the server APIs for opportunities,
 announcements, events, bookmarks, applications, profiles, and announcement
@@ -85,6 +94,9 @@ From the project root:
 
 ```powershell
 npm run dev
+npm run lint
+npm test
+npm run check
 npm run build
 npm run preview
 ```
@@ -156,16 +168,20 @@ All feature endpoints require `Authorization: Bearer <token>`.
 - `PUT /api/announcement-reads/:announcementId`
 - `DELETE /api/announcement-reads/:announcementId`
 
-## Demo accounts
+## Seeded development accounts
 
-The database seed creates these accounts for the upcoming authentication
-milestone:
+The database seed creates these accounts for local development:
 
 - Admin: `admin@campusconnect.edu` / `Admin@123`
 - Student: `student@campusconnect.edu` / `Student@123`
 
 The login screen accepts these credentials and routes each account to its
 role-specific workspace.
+
+## Production preparation
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for environment variables, build commands,
+hosting layout, database preparation, health checks, and release verification.
 
 ## Project structure
 

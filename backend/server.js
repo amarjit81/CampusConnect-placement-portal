@@ -48,6 +48,16 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "CampusConnect backend is running" });
 });
 
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    res.status(500).json({ message: "Database connection failed" });
+  }
+});
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,

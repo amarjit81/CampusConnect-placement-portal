@@ -1,6 +1,6 @@
 const express = require("express");
 const helmet = require("helmet");
-const { rateLimit } = require("express-rate-limit");
+const { ipKeyGenerator, rateLimit } = require("express-rate-limit");
 const connectDatabase = require("./config/database");
 const opportunityRoutes = require("./routes/opportunityRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
@@ -20,6 +20,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
   .filter(Boolean);
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use(helmet());
 
 // During development the React app runs on a different port from Express.
@@ -61,6 +62,7 @@ app.use("/api", async (req, res, next) => {
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { message: "Too many sign-in attempts. Please try again later." },

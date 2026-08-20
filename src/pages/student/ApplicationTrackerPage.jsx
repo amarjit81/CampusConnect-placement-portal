@@ -24,6 +24,9 @@ function ApplicationTrackerPage() {
   } = useCampus();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState(null);
+  const [error, setError] = useState("");
 
   function openAddModal() {
     setEditingEntry(null);
@@ -40,22 +43,38 @@ function ApplicationTrackerPage() {
     setEditingEntry(null);
   }
 
-  function saveEntry(entry) {
-    if (editingEntry) {
-      updateTrackerEntry(editingEntry.id, entry);
-    } else {
-      addTrackerEntry(entry);
+  async function saveEntry(entry) {
+    setIsSaving(true);
+    setError("");
+    try {
+      if (editingEntry) {
+        await updateTrackerEntry(editingEntry.id, entry);
+      } else {
+        await addTrackerEntry(entry);
+      }
+      closeModal();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setIsSaving(false);
     }
-    closeModal();
   }
 
-  function removeEntry(entry) {
+  async function removeEntry(entry) {
     if (
       window.confirm(
         `Remove ${entry.company} from your personal application tracker?`,
       )
     ) {
-      deleteTrackerEntry(entry.id);
+      setDeletingEntryId(entry.id);
+      setError("");
+      try {
+        await deleteTrackerEntry(entry.id);
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        setDeletingEntryId(null);
+      }
     }
   }
 
@@ -80,6 +99,8 @@ function ApplicationTrackerPage() {
           </button>
         </div>
       </div>
+
+      {error && <p className="form-error" role="alert">{error}</p>}
 
       {trackerEntries.length === 0 ? (
         <EmptyState
@@ -118,9 +139,10 @@ function ApplicationTrackerPage() {
                       <button
                         className="button button--danger button--small"
                         type="button"
+                        disabled={deletingEntryId === application.id}
                         onClick={() => removeEntry(application)}
                       >
-                        Delete
+                        {deletingEntryId === application.id ? "Deleting..." : "Delete"}
                       </button>
                     )}
                   </div>
@@ -151,6 +173,7 @@ function ApplicationTrackerPage() {
           entry={editingEntry}
           onClose={closeModal}
           onSave={saveEntry}
+          isSubmitting={isSaving}
         />
       )}
     </div>

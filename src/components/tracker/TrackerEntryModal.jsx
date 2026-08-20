@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const emptyEntry = {
   company: "",
@@ -19,12 +19,10 @@ const roundOptions = [
   "HR Round",
 ];
 
-function TrackerEntryModal({ entry, onClose, onSave }) {
-  const [form, setForm] = useState(emptyEntry);
-
-  useEffect(() => {
-    setForm(entry ? { ...emptyEntry, ...entry } : emptyEntry);
-  }, [entry]);
+function TrackerEntryModal({ entry, onClose, onSave, isSubmitting = false }) {
+  const [form, setForm] = useState(() =>
+    entry ? { ...emptyEntry, ...entry } : emptyEntry,
+  );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -143,11 +141,24 @@ function TrackerEntryModal({ entry, onClose, onSave }) {
           </div>
 
           <div className="modal-card__actions">
-            <button className="button button--ghost" type="button" onClick={onClose}>
+            <button
+              className="button button--ghost"
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </button>
-            <button className="button button--primary" type="submit">
-              {entry ? "Save changes" : "Add tracking"}
+            <button
+              className="button button--primary"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? "Saving..."
+                : entry
+                  ? "Save changes"
+                  : "Add tracking"}
             </button>
           </div>
         </form>

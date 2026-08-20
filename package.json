@@ -5,15 +5,24 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test src/utils/opportunityStatus.test.js src/services/api.test.js",
+    "lint": "eslint src vite.config.js",
+    "check": "npm run lint && npm test && npm run build",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.1.1"
+    "react-router-dom": "^7.1.1",
+    "vite": "^6.0.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0"
+  }
 }

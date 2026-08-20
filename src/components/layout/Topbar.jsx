@@ -10,6 +10,8 @@ const pageNames = {
   new: "Add opportunity",
   bookmarks: "Bookmarks",
   announcements: "Announcements",
+  profile: "Profile",
+  applications: "Applications",
 };
 
 function Topbar({ onMenuClick }) {
@@ -17,7 +19,12 @@ function Topbar({ onMenuClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const lastSegment = location.pathname.split("/").filter(Boolean).at(-1);
-  const pageTitle = pageNames[lastSegment] || "Opportunity details";
+  const pageTitle =
+    lastSegment === "events" && currentRole === "admin"
+      ? "Events"
+      : location.pathname.endsWith("/edit")
+        ? "Edit opportunity"
+        : pageNames[lastSegment] || "Opportunity details";
 
   function handleLogout() {
     logout();

@@ -1,4 +1,5 @@
-import eventData from "../../data/events.json";
+import { useCampus } from "../../context/CampusContext";
+import EmptyState from "../../components/common/EmptyState";
 
 function formatEventDate(dateTime) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -15,7 +16,8 @@ function getStatusClass(status) {
 }
 
 function UpcomingEventsPage() {
-  const events = [...eventData]
+  const { events: campusEvents, isInitialLoading } = useCampus();
+  const events = [...campusEvents]
     .filter((event) => new Date(event.dateTime) >= new Date())
     .sort((first, second) => new Date(first.dateTime) - new Date(second.dateTime));
 
@@ -36,6 +38,12 @@ function UpcomingEventsPage() {
       </div>
 
       <div className="event-list">
+        {!isInitialLoading && events.length === 0 && (
+          <EmptyState
+            title="No upcoming events"
+            message="New placement events will appear here when the T&P Cell schedules them."
+          />
+        )}
         {events.map((event) => (
           <article className="event-card" key={event.id}>
             <div className="event-card__topline">
@@ -49,9 +57,9 @@ function UpcomingEventsPage() {
               </time>
 
               <div className="event-card__company">
-                <span className="company-logo">{event.company.charAt(0)}</span>
+                <span className="company-logo">{event.company?.charAt(0) || "C"}</span>
                 <div>
-                  <p>{event.company}</p>
+                  <p>{event.company || "Campus event"}</p>
                   <h3>{event.eventTitle || event.eventType}</h3>
                   <span>{event.role}</span>
                 </div>
@@ -68,7 +76,7 @@ function UpcomingEventsPage() {
 
               <div className="event-card__notes">
                 <span>Official note from T&amp;P</span>
-                <p>{event.notes}</p>
+                <p>{event.notes || event.description}</p>
               </div>
             </div>
           </article>

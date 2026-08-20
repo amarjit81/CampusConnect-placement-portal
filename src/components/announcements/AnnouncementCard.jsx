@@ -6,13 +6,14 @@ import {
   getRelativeTime,
 } from "../../utils/announcements";
 
-function AnnouncementCard({ announcement }) {
+function AnnouncementCard({ announcement, onEdit, onDelete, isDeleting = false }) {
   const {
     currentRole,
     readAnnouncementIds,
     toggleAnnouncementRead,
   } = useCampus();
   const [showFullAnnouncement, setShowFullAnnouncement] = useState(false);
+  const [isUpdatingReadState, setIsUpdatingReadState] = useState(false);
   const isStudent = currentRole === "student";
   const isRead = readAnnouncementIds.includes(announcement.id);
 
@@ -40,13 +41,46 @@ function AnnouncementCard({ announcement }) {
           </div>
           <h3>{announcement.title}</h3>
           <p>{announcement.message}</p>
+          {currentRole === "admin" && (onEdit || onDelete) && (
+            <div className="announcement-card__actions">
+              {onEdit && (
+                <button
+                  className="button button--ghost button--small"
+                  type="button"
+                  onClick={() => onEdit(announcement)}
+                >
+                  Edit
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  className="button button--danger button--small"
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => onDelete(announcement)}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              )}
+            </div>
+          )}
           {isStudent && (
             <div className="announcement-card__actions">
               <button
                 className="announcement-read-toggle"
                 type="button"
                 aria-pressed={isRead}
-                onClick={() => toggleAnnouncementRead(announcement.id)}
+                disabled={isUpdatingReadState}
+                onClick={async () => {
+                  setIsUpdatingReadState(true);
+                  try {
+                    await toggleAnnouncementRead(announcement.id);
+                  } catch {
+                    // The shared API notice displays the server error.
+                  } finally {
+                    setIsUpdatingReadState(false);
+                  }
+                }}
               >
                 <span className="announcement-read-toggle__control">
                   {isRead ? "✓" : ""}
@@ -133,7 +167,17 @@ function AnnouncementCard({ announcement }) {
                   isRead ? "button--ghost" : "button--primary"
                 }`}
                 type="button"
-                onClick={() => toggleAnnouncementRead(announcement.id)}
+                disabled={isUpdatingReadState}
+                onClick={async () => {
+                  setIsUpdatingReadState(true);
+                  try {
+                    await toggleAnnouncementRead(announcement.id);
+                  } catch {
+                    // The shared API notice displays the server error.
+                  } finally {
+                    setIsUpdatingReadState(false);
+                  }
+                }}
               >
                 {isRead ? "Mark as unread" : "✓ Mark as read"}
               </button>

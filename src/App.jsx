@@ -1,4 +1,3 @@
-import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -7,11 +6,15 @@ import LoginPage from "./pages/shared/LoginPage";
 import NotFoundPage from "./pages/shared/NotFoundPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AddOpportunityPage from "./pages/admin/AddOpportunityPage";
+import EditOpportunityPage from "./pages/admin/EditOpportunityPage";
 import AdminAnnouncementsPage from "./pages/admin/AdminAnnouncementsPage";
+import AdminEventsPage from "./pages/admin/AdminEventsPage";
+import AdminApplicationsPage from "./pages/admin/AdminApplicationsPage";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import BookmarksPage from "./pages/student/BookmarksPage";
 import ApplicationTrackerPage from "./pages/student/ApplicationTrackerPage";
 import UpcomingEventsPage from "./pages/student/UpcomingEventsPage";
+import StudentProfilePage from "./pages/student/StudentProfilePage";
 import OpportunitiesPage from "./pages/shared/OpportunitiesPage";
 import OpportunityDetailsPage from "./pages/shared/OpportunityDetailsPage";
 import AnnouncementsPage from "./pages/shared/AnnouncementsPage";
@@ -28,6 +31,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="opportunities" element={<OpportunitiesPage />} />
           <Route path="opportunities/new" element={<AddOpportunityPage />} />
+          <Route path="opportunities/:id/edit" element={<EditOpportunityPage />} />
           <Route
             path="opportunities/:id"
             element={<OpportunityDetailsPage />}
@@ -36,6 +40,8 @@ function App() {
             path="announcements"
             element={<AdminAnnouncementsPage />}
           />
+          <Route path="events" element={<AdminEventsPage />} />
+          <Route path="applications" element={<AdminApplicationsPage />} />
         </Route>
       </Route>
 
@@ -52,6 +58,7 @@ function App() {
           <Route path="tracker" element={<ApplicationTrackerPage />} />
           <Route path="events" element={<UpcomingEventsPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
+          <Route path="profile" element={<StudentProfilePage />} />
         </Route>
       </Route>
 

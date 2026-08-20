@@ -1,4 +1,5 @@
-import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCampus } from "../../context/CampusContext";
 import { checkEligibility } from "../../utils/eligibility";
 import EligibilityBadge from "../../components/opportunities/EligibilityBadge";
@@ -16,7 +17,15 @@ function formatDate(date) {
 
 function OpportunityDetailsPage() {
   const { id } = useParams();
-  const { opportunities, currentRole, student } = useCampus();
+  const navigate = useNavigate();
+  const {
+    opportunities,
+    currentRole,
+    student,
+    deleteOpportunity,
+    addTrackerEntry,
+  } = useCampus();
+  const [isTracking, setIsTracking] = useState(false);
   const opportunity = opportunities.find((item) => item.id === id);
 
   if (!opportunity) {
@@ -50,6 +59,28 @@ function OpportunityDetailsPage() {
         </div>
         {currentRole === "student" && (
           <BookmarkButton opportunityId={opportunity.id} />
+        )}
+        {currentRole === "admin" && (
+          <div className="page-header__actions">
+            <Link className="button button--ghost" to={`/admin/opportunities/${id}/edit`}>
+              Edit
+            </Link>
+            <button
+              className="button button--danger"
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Delete ${opportunity.company} — ${opportunity.role}?`)) return;
+                try {
+                  await deleteOpportunity(id);
+                  navigate("/admin/opportunities");
+                } catch {
+                  // The shared API notice displays the server error.
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
         )}
       </section>
 
@@ -118,14 +149,48 @@ function OpportunityDetailsPage() {
             <b>{opportunity.location}</b>
           </div>
           {currentRole === "student" && opportunity.status === "active" && (
-            <a
-              className="button button--primary button--full"
-              href={opportunity.applicationLink}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open application ↗
-            </a>
+            <>
+              <a
+                className="button button--primary button--full"
+                href={opportunity.applicationLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open application ↗
+              </a>
+              <button
+                className="button button--ghost button--full"
+                type="button"
+                disabled={!opportunity.eligible || opportunity.applied || isTracking}
+                onClick={async () => {
+                  setIsTracking(true);
+                  try {
+                    await addTrackerEntry({
+                      opportunityId: opportunity.id,
+                      company: opportunity.company,
+                      role: opportunity.role,
+                      appliedDate: new Date().toISOString().slice(0, 10),
+                      currentRound: "Application Submitted",
+                      applicationStatus: "Applied",
+                      nextStep: "Monitor placement updates",
+                      notes: "",
+                    });
+                  } catch {
+                    // The shared API notice displays the server error.
+                  } finally {
+                    setIsTracking(false);
+                  }
+                }}
+              >
+                {!opportunity.eligible
+                  ? "Not eligible for this opportunity"
+                  : opportunity.applied
+                  ? "Already in tracker"
+                  : isTracking
+                    ? "Adding..."
+                    : "Add to application tracker"}
+              </button>
+            </>
           )}
         </aside>
       </div>
